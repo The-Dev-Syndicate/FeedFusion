@@ -7,10 +7,8 @@ export default defineConfig({
     clearScreen: false,
     // Tauri expects a fixed port, fail if that port is not available
     server: {
+        port: 3000,
         strictPort: true,
-    },
-    server: {
-        port: 3000
     },
     esbuild: {
         loader: 'jsx',
