@@ -29,7 +29,7 @@
         "icons/icon.ico"
       ],
       "identifier": "dev.dcorps",
-      "longDescription": "",
+      "longDescription": "An Open Source RSS / ATOM feed reader (pretend this is longer then the short description)",
       "macOS": {
         "entitlements": null,
         "exceptionDomain": "",
@@ -38,7 +38,7 @@
         "signingIdentity": null
       },
       "resources": [],
-      "shortDescription": "",
+      "shortDescription": "An Open Source RSS / ATOM feed reader",
       "targets": "all",
       "windows": {
         "certificateThumbprint": null,
