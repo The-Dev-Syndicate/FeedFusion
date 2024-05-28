@@ -8,6 +8,8 @@ fn main() {
         .expect("error while running tauri application");
 }
 
+// This is how we can create things for react to call on the backend
+// It is an extermely simple command that at the end of the day simple returns hello world
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}!", name)
