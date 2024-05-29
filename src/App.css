@@ -79,12 +79,13 @@ html,
 }
 
 .sidebar {
-  width: 25%;
+  width: 15%;
   background-color: #f8f9fa;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 1rem;
+  margin-bottom: 3rem; /* Adjust the margin-top to match the height of your navbar */
 }
 
 .feed-list {
