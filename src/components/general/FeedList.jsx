@@ -6,7 +6,7 @@ export default function FeedList() {
         <>
         <h1>Feeds</h1>
         <ul>
-            {getThisFromRustLater.map((item) => <li class="list-item">{item}</li>)}
+            {getThisFromRustLater.map((item, index) => <li className="list-item" key={index}>{item}</li>)}
         </ul>
         </>
     );
