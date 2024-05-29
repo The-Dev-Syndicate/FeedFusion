@@ -11,9 +11,71 @@ html,
   width: 100%;
 }
 
+.inline-button {
+  background-color: #007bff;
+  /* Blue background */
+  color: #ffffff;
+  /* White text */
+  border: none;
+  padding: 0.5em 1em;
+  /* Increased padding */
+  font: inherit;
+  text-decoration: none;
+  font-size: 1.1em;
+  border-radius: 1em;
+  /* Border radius for capsule shape */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  /* Smooth transition */
+}
+
+.inline-button:hover,
+.inline-button:focus {
+  background-color: #0056b3;
+  /* Darker blue on hover */
+  text-decoration: none;
+}
+
+.inline-button:active {
+  background-color: #00376a;
+  /* Even darker blue when clicked */
+}
+
 .container {
   display: flex;
+  flex-direction: column;
   height: 100%;
+}
+
+.main-content {
+  display: flex;
+  flex-grow: 1;
+  height: 90%;
+  /* Adjust this value as needed */
+}
+
+.navbar {
+  background-color: #333;
+  padding: 1rem;
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  /* Center the navbar items horizontally */
+}
+
+.navbar a {
+  color: white;
+  margin: 0 1rem;
+  text-decoration: none;
+}
+
+.navbar a.active {
+  color: yellow;
+  font-weight: bold;
 }
 
 .sidebar {
