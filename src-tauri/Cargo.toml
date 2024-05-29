@@ -1,11 +1,11 @@
 [package]
-name = "app"
+name = "FeedFusion"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
-license = ""
-repository = ""
-default-run = "app"
+description = "An Open Source RSS / ATOM Feed Reader"
+authors = ["Chris Conlon", "John Liu", "Andrew Christian"]
+license = "MIT License"
+repository = "https://github.com/Development-Corps/FeedFusion"
+default-run = "FeedFusion"
 edition = "2021"
 rust-version = "1.60"
 
