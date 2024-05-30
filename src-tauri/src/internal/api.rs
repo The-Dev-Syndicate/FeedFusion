@@ -7,6 +7,6 @@ pub fn greet(name: &str) -> String {
 }
 
 #[command]
-pub fn add_feed_url(feed_url: String) {
-    println!("[RUST] Tried to add {}", feed_url);
+pub fn add_feed_url(feed_url: String, feed_alias: String, poll_timer: u8) {
+    println!("[RUST] feed: {} | alias: {} | timer: {}", feed_url, feed_alias, poll_timer);
 }

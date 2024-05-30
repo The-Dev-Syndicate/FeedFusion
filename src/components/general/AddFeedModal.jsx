@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api';
 
 export default function AddFeedModal({ isOpen, onClose }) {
   const [url, setUrl] = useState('');
-  const [name, setName] = useState('');
+  const [alias, setAlias] = useState('');
   const [pollTimer, setPollTimer] = useState(10); // default to 10 minutes
 
   if (!isOpen) {
@@ -13,24 +13,18 @@ export default function AddFeedModal({ isOpen, onClose }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     // Perform form validation and submission logic here
-    console.log({ url, name, pollTimer });
-    invoke('add_feed_url', { feedUrl: url })
+    console.log({ url, name: alias, pollTimer });
+    invoke('add_feed_url', { feedUrl: url, feedAlias: alias, pollTimer })
     .then(() => {
       console.log("Feed URL added successfully");
       setUrl('');
-      setName('');
+      setAlias('');
       setPollTimer(10);
       onClose();
     })
     .catch((error) => {
       console.error("Failed to add feed URL", error);
     });
-
-    // Reset form and close modal
-    setUrl('');
-    setName('');
-    setPollTimer(10);
-    onClose();
   };
 
   return (
@@ -52,8 +46,8 @@ export default function AddFeedModal({ isOpen, onClose }) {
             <label>Name (optional):</label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
             />
           </div>
           <div>
