@@ -1,14 +1,28 @@
-// src/components/general/Navbar.jsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
-export default function() {
+export default function Navbar() {
     return (
         <nav className="navbar">
-            <NavLink to="/" exact activeClassName="active">Home</NavLink>
-            <NavLink to="/about" activeClassName="active">About</NavLink>
-            <NavLink to="/asdasd" activeClassName="active">404</NavLink>
+            <NavLink
+                to="/"
+                end
+                className={({ isActive }) => isActive ? 'active' : ''}
+            >
+                Home
+            </NavLink>
+            <NavLink
+                to="/about"
+                className={({ isActive }) => isActive ? 'active' : ''}
+            >
+                About
+            </NavLink>
+            <NavLink
+                to="/asdasd"
+                className={({ isActive }) => isActive ? 'active' : ''}
+            >
+                404
+            </NavLink>
         </nav>
     );
-};
-
+}

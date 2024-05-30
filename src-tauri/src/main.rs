@@ -1,5 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+mod internal; // Declare the internal module
+
 use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
 
 // TODO: We should add some configuration files so that the menu / port / etc. are customizable via config
@@ -8,7 +11,7 @@ fn main() {
     let menu = generate_menu();
     tauri::Builder::default()
         .menu(menu) // Use the built above menu
-        // This handles the events the menu creates
+        // This handles the events that the menu creates
         .on_menu_event(|event| {
             match event.menu_item_id() {
               "quit" => {
@@ -20,7 +23,8 @@ fn main() {
               _ => {}
             }
           })
-        .invoke_handler(tauri::generate_handler![greet])
+        // Add all the api end points in the array here
+        .invoke_handler(tauri::generate_handler![internal::api::greet, internal::api::add_feed_url])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -42,9 +46,3 @@ fn generate_menu() -> Menu {
         return menu;
 }
 
-// This is how we can create things for react to call on the backend
-// It is an extermely simple command that at the end of the day simple returns hello world
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}!", name)
-}
