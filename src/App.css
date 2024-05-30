@@ -164,3 +164,8 @@ html,
 .circle-button:hover {
   background-color: #0056b3; /* Change background color on hover */
 }
+
+.list-item {
+  border: 1px solid gray;
+  margin: 10px;
+}
