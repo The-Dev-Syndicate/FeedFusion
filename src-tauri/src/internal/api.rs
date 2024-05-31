@@ -1,8 +1,7 @@
 // File to house backend logic
-use std::fs::{File, OpenOptions};
 use tauri::command;
 
-use crate::internal::feed_config::{Feed, Feeds, FEED_CONFIGURATION};
+use crate::internal::feed_config::{Feed, FEED_CONFIGURATION};
 
 
 #[command]
@@ -12,35 +11,36 @@ pub fn greet(name: &str) -> String {
 
 #[command]
 pub fn load_feeds() -> Vec<Feed> {
-    let feeds_mutex = FEED_CONFIGURATION.lock().unwrap();
+    // TODO: This will come from in memory DB eventually
+    let f1: Feed = Feed::new(
+        "https://feed2.is.fake".to_string(),
+        "fake".to_string(),
+        Some("Feed 1".to_string()),
+        5
+    );
+    let f2: Feed = Feed::new(
+        "https://feed1.is.fake".to_string(),
+        "fake".to_string(),
+        Some("Feed 2".to_string()),
+        5
+    );
+    let f3: Feed = Feed::new(
+        "https://feed3.is.fake".to_string(),
+        "fake".to_string(),
+        None,
+        5
+    );
+
+    let mut feeds_mutex = FEED_CONFIGURATION.lock().unwrap();
+    feeds_mutex.add_feed(f1);
+    feeds_mutex.add_feed(f2);
+    feeds_mutex.add_feed(f3);
     let feeds = feeds_mutex.feeds.iter().cloned().collect();
     // No need to drop the mutex as it will be automatically released when it goes out of scope
     feeds
 }
 
-#[command]
-pub fn add_feed_url(feed_url: String, feed_alias: String, poll_timer: u8) {
-    let file_path = "../feeds.yaml"; // TODO: this needs to be put probably somewhere else but for now it works for testing
-    let new_feed = Feed::new(
-        feed_url,
-        String::from("null_for_now"),
-        feed_alias,
-        poll_timer,
-    );
-    let mut feeds_mutex = FEED_CONFIGURATION.lock().unwrap();
-    feeds_mutex.add_feed(new_feed.clone());
-    let feeds: Feeds = feeds_mutex.clone(); // Clone the Feeds struct
-    drop(feeds_mutex); // Release the lock as we don't need it anymore
-
-    let mut file: File = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(file_path)
-        .unwrap();
-
-    // FIXME: IDK why but the yaml written out is not super human readable but serde gets it so tomorrows issue
-    serde_yaml::to_writer(&mut file, &feeds).unwrap_or_else(|err| {
-        eprintln!("Failed to write feeds to file: {}", err);
-    });
-}
+// #[command]
+// pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: u8) {
+//     // TODO: this will become an in memory DB
+// }

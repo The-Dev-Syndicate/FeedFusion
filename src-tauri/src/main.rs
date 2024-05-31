@@ -26,7 +26,7 @@ fn main() {
         // Add all the api end points in the array here
         .invoke_handler(tauri::generate_handler![
             internal::api::greet, 
-            internal::api::add_feed_url,
+            // internal::api::add_feed,
             internal::api::load_feeds
         ])
         .run(tauri::generate_context!())

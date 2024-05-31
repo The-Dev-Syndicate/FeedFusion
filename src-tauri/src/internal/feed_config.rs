@@ -32,15 +32,11 @@ pub struct Feed {
 }
 
 impl Feed {
-    pub fn new(feed_url: String, category: String, feed_alias: String, poll_timer: u8) -> Self {
+    pub fn new(feed_url: String, category: String, feed_alias: Option<String>, poll_timer: u8) -> Self {
         Self {
             category: category,
             url: feed_url,
-            alias: if feed_alias.is_empty() {
-                None
-            } else {
-                Some(feed_alias)
-            },
+            alias: feed_alias,
             poll_timer,
         }
     }
