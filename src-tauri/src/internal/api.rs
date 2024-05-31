@@ -1,12 +1,31 @@
 // File to house backend logic
 use tauri::command;
 
+use crate::internal::article::Article;
 use crate::internal::feed_config::{Feed, FEED_CONFIGURATION};
-
 
 #[command]
 pub fn greet(name: &str) -> String {
     format!("Hello, {}!", name)
+}
+
+#[command]
+pub fn get_articles() -> Vec<Article> {
+    // Return two hardcoded fake articles for now
+    vec![
+        Article::new(
+            "First Article",
+            "This is the description of the first article.",
+            "John Doe",
+            "2024-05-30T12:00:00",
+        ),
+        Article::new(
+            "Second Article",
+            "This is the description of the second article.",
+            "Jane Smith",
+            "2024-05-31T09:30:00",
+        ),
+    ]
 }
 
 #[command]
@@ -16,19 +35,19 @@ pub fn load_feeds() -> Vec<Feed> {
         "https://feed2.is.fake".to_string(),
         "fake".to_string(),
         Some("Feed 1".to_string()),
-        5
+        5,
     );
     let f2: Feed = Feed::new(
         "https://feed1.is.fake".to_string(),
         "fake".to_string(),
         Some("Feed 2".to_string()),
-        5
+        5,
     );
     let f3: Feed = Feed::new(
         "https://feed3.is.fake".to_string(),
         "fake".to_string(),
         None,
-        5
+        5,
     );
 
     let mut feeds_mutex = FEED_CONFIGURATION.lock().unwrap();

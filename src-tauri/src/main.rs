@@ -27,7 +27,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             internal::api::greet, 
             // internal::api::add_feed,
-            internal::api::load_feeds
+            internal::api::load_feeds,
+            internal::api::get_articles
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
