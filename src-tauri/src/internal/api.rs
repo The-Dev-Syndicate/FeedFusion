@@ -1,8 +1,14 @@
 // File to house backend logic
 use tauri::command;
+use url::Url;
 
 use crate::internal::article::Article;
 use crate::internal::feed_config::{Feed, FEED_CONFIGURATION};
+
+#[derive(Debug)]
+pub enum FeedError {
+    InvalidUrl,
+}
 
 #[command]
 pub fn greet(name: &str) -> String {
@@ -59,7 +65,36 @@ pub fn load_feeds() -> Vec<Feed> {
     feeds
 }
 
-// #[command]
-// pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: u8) {
-//     // TODO: this will become an in memory DB
-// }
+#[command]
+pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: u8) -> Result<(), String> {
+    match validate_and_correct_url(&feed_url) {
+        Ok(_) => {
+            println!("Eventually we will build with {} - {}", feed_alias, poll_timer); // TODO: 
+            // let new_feed = Feed {
+            //     category: "null_for_now".to_string(),
+            //     url: valid_url,
+            //     alias: Some(feed_alias),
+            //     poll_timer,
+            // };
+            Ok(())
+        }
+        Err(FeedError::InvalidUrl) => Err("Invalid URL".to_string()),
+    }
+}
+
+// -------------------------------------- HELPERS --------------------------------------  \\
+pub fn validate_and_correct_url(feed_url: &str) -> Result<String, FeedError> {
+    if !feed_url.starts_with("http://") && !feed_url.starts_with("https://") {
+        let corrected_url = format!("https://{}", feed_url);
+        return validate_url(&corrected_url);
+    }
+
+    validate_url(feed_url)
+}
+
+fn validate_url(feed_url: &str) -> Result<String, FeedError> {
+    match Url::parse(feed_url) {
+        Ok(url) => Ok(url.into_string()),
+        Err(_) => Err(FeedError::InvalidUrl),
+    }
+}

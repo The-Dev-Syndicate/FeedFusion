@@ -21,6 +21,7 @@ config = "0.14.0"
 tauri = { version = "1.6.4", features = [] }
 serde_yaml = "0.9.34"
 lazy_static = "1.4.0"
+url = "2.5.0"
 
 
 [features]
