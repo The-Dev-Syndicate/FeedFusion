@@ -11,18 +11,82 @@ html,
   width: 100%;
 }
 
+.inline-button {
+  background-color: #007bff;
+  /* Blue background */
+  color: #ffffff;
+  /* White text */
+  border: none;
+  padding: 0.5em 1em;
+  /* Increased padding */
+  font: inherit;
+  text-decoration: none;
+  font-size: 1.1em;
+  border-radius: 1em;
+  /* Border radius for capsule shape */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  /* Smooth transition */
+}
+
+.inline-button:hover,
+.inline-button:focus {
+  background-color: #0056b3;
+  /* Darker blue on hover */
+  text-decoration: none;
+}
+
+.inline-button:active {
+  background-color: #00376a;
+  /* Even darker blue when clicked */
+}
+
 .container {
   display: flex;
+  flex-direction: column;
   height: 100%;
 }
 
+.main-content {
+  display: flex;
+  flex-grow: 1;
+  height: 90%;
+  /* Adjust this value as needed */
+}
+
+.navbar {
+  background-color: #333;
+  padding: 1rem;
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  /* Center the navbar items horizontally */
+}
+
+.navbar a {
+  color: white;
+  margin: 0 1rem;
+  text-decoration: none;
+}
+
+.navbar a.active {
+  color: yellow;
+  font-weight: bold;
+}
+
 .sidebar {
-  width: 25%;
+  width: 15%;
   background-color: #f8f9fa;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 1rem;
+  margin-bottom: 3rem;
+  /* Adjust the margin-top to match the height of your navbar */
 }
 
 .feed-list {
@@ -44,4 +108,106 @@ html,
   background-color: #ffffff;
   display: flex;
   flex-direction: column;
+}
+
+.modal {
+  display: flex;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 300px;
+  border-radius: 10px;
+  position: relative;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.circle-button {
+  width: 25px;
+  /* Adjust the size as needed */
+  height: 25px;
+  /* Adjust the size as needed */
+  border-radius: 50%;
+  /* Makes the button circular */
+  background-color: #007bff;
+  /* Button background color */
+  color: white;
+  /* Text color */
+  font-size: 15px;
+  /* Adjust the font size as needed */
+  border: none;
+  /* Remove border */
+  cursor: pointer;
+  /* Show pointer cursor on hover */
+  margin-left: .5rem;
+}
+
+.circle-button:hover {
+  background-color: #0056b3;
+  /* Change background color on hover */
+}
+
+.list-item {
+  border: 1px solid gray;
+  margin: 10px;
+}
+
+.article-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.article-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.article-card h2 {
+  margin-bottom: 8px;
+}
+
+.datetime {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.author-info {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  font-size: 12px;
+  color: #666;
 }
