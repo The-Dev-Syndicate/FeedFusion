@@ -10,6 +10,7 @@ pub struct RssItem{
     title: String,
     link: String,
     description: String
+    // TODO: fill in the rest of these making some optional while others should be required (see: https://www.rssboard.org/rss-specification#requiredChannelElements)
 }
 
 

@@ -94,7 +94,7 @@ pub fn validate_and_correct_url(feed_url: &str) -> Result<String, FeedError> {
 
 fn validate_url(feed_url: &str) -> Result<String, FeedError> {
     match Url::parse(feed_url) {
-        Ok(url) => Ok(url.into_string()),
+        Ok(url) => Ok(url.to_string()),
         Err(_) => Err(FeedError::InvalidUrl),
     }
 }
