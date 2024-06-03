@@ -5,7 +5,7 @@ mod internal; // Declare the internal module
 
 use std::time::Duration;
 
-use internal::rss::FeedType;
+use internal::feed::FeedType;
 use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
 
 // TODO: We should add some configuration files so that the menu / port / etc. are customizable via config
@@ -19,12 +19,12 @@ fn main() {
       
           // Define the feeds with their respective poll intervals
           let feeds = vec![
-              internal::rss::Feed {
+              internal::feed::Feed {
                   url: "https://example.com/rss1".to_string(),
                   feed_type: FeedType::RSS,
                   poll_interval: Duration::from_secs(60),
               },
-              internal::rss::Feed {
+              internal::feed::Feed {
                   url: "https://example.com/atom1".to_string(),
                   feed_type: FeedType::ATOM,
                   poll_interval: Duration::from_secs(24 * 60 * 60), // 24 hours
@@ -32,7 +32,7 @@ fn main() {
               // Add more feeds as needed
           ];
       
-          internal::rss::start_feed_fetcher(app_handle, feeds);
+          internal::feed::start_feed_fetcher(app_handle, feeds);
           Ok(())
         })
         .menu(menu) // Use the built above menu
