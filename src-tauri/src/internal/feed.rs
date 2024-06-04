@@ -68,35 +68,29 @@ fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
 }
 
 pub fn start_feed_fetcher<R: Runtime>(app: AppHandle<R>, feeds: Vec<Feed>) {
-    fetch_and_emit_feeds(&app, &feeds); // Do this only once then moves to normal interval polling
-
-    thread::spawn(move || {
-        loop {
-            for feed in &feeds {
-                match fetch_feed(&feed.url, &feed.feed_type) {
-                    Ok(items) => {
-                        app.emit_all("new-rss-items", &items).unwrap();
-                    }
-                    Err(e) => eprintln!("Error fetching feed {}: {}", feed.url, e),
-                }
-            }
-            thread::sleep(Duration::from_secs(60)); // Fetch every 60 seconds
-            println!("Going to sleep");
+    for feed in feeds {
+        let app_handle = app.clone();
+        let feed_clone = feed.clone();
+        
+        // Fetch feed immediately upon initialization
+        if let Err(e) = fetch_and_emit_feed(&app_handle, &feed_clone) {
+            eprintln!("Error fetching feed immediately: {}", e);
         }
-    });
+        
+        thread::spawn(move || {
+            loop {
+                if let Err(e) = fetch_and_emit_feed(&app_handle, &feed_clone) {
+                    app_handle.emit_all("feed-error", &format!("Error fetching feed {}: {}", feed_clone.url, e)).unwrap();
+                    eprintln!("Error fetching feed {}: {}", feed_clone.url, e);
+                }
+                thread::sleep(feed_clone.poll_interval);
+            }
+        });
+    }
 }
 
-// This runs right when the app starts to ensure we get data on start 
-fn fetch_and_emit_feeds<R: Runtime>(app: &AppHandle<R>, feeds: &[Feed]) {
-    for feed in feeds {
-        match fetch_feed(&feed.url, &feed.feed_type) {
-            Ok(items) => {
-                app.emit_all("new-rss-items", &items).unwrap();
-            }
-            Err(e) => {
-                app.emit_all("feed-error", &format!("Error fetching feed {}: {}", feed.url, e)).unwrap();
-                eprintln!("Error fetching feed {}: {}", feed.url, e);
-            }
-        }
-    }
+fn fetch_and_emit_feed<R: Runtime>(app: &AppHandle<R>, feed: &Feed) -> Result<(), Box<dyn std::error::Error>> {
+    let items = fetch_feed(&feed.url, &feed.feed_type)?;
+    app.emit_all("new-rss-items", &items)?;
+    Ok(())
 }

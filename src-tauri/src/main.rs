@@ -17,20 +17,21 @@ fn main() {
           let app_handle = app.handle();
           println!("Setting up the app...");
       
+          // TODO: this will come from DB on startup not from requests
           // Define the feeds with their respective poll intervals
           let feeds = vec![
-              internal::feed::Feed {
-                  url: "https://example.com/rss1".to_string(),
-                  feed_type: FeedType::RSS,
-                  poll_interval: Duration::from_secs(60),
-              },
-              internal::feed::Feed {
-                  url: "https://example.com/atom1".to_string(),
-                  feed_type: FeedType::ATOM,
-                  poll_interval: Duration::from_secs(24 * 60 * 60), // 24 hours
-              },
-              // Add more feeds as needed
-          ];
+            internal::feed::Feed {
+                url: "https://lorem-rss.herokuapp.com/feed?unit=day".to_string(),
+                feed_type: FeedType::RSS,
+                poll_interval: Duration::from_secs(60),
+            },
+            internal::feed::Feed {
+                url: "https://run.mocky.io/v3/d3d616ed-4780-41f9-915f-bce277ae0afe".to_string(), // this url may need to be regenerated every so often
+                feed_type: FeedType::ATOM,
+                poll_interval: Duration::from_secs(20) //(24 * 60 * 60), // 24 hours
+            },
+            // Add more feeds as needed
+        ];
       
           internal::feed::start_feed_fetcher(app_handle, feeds);
           Ok(())
