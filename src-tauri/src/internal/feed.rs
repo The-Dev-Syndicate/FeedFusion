@@ -52,9 +52,19 @@ fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
 }
 
 fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
-    // TODO: Implement ATOM feed fetching logic here
-    print!("This is here to hide warnings for now: {}", url);
-    Ok(Vec::new())
+    let response = get(url)?.text()?;
+    let feed = atom_syndication::Feed::read_from(response.as_bytes())?;
+
+    let items: Vec<FeedItem> = feed.entries()
+        .iter()
+        .map(|entry| FeedItem {
+            title: entry.title().to_string(),
+            link: entry.links().first().map(|link| link.href().to_string()).unwrap_or_default(),
+            description: entry.summary().map(|summary| summary.to_string()).unwrap_or_default(),
+        })
+        .collect();
+
+    Ok(items)
 }
 
 pub fn start_feed_fetcher<R: Runtime>(app: AppHandle<R>, feeds: Vec<Feed>) {
@@ -79,12 +89,14 @@ pub fn start_feed_fetcher<R: Runtime>(app: AppHandle<R>, feeds: Vec<Feed>) {
 // This runs right when the app starts to ensure we get data on start 
 fn fetch_and_emit_feeds<R: Runtime>(app: &AppHandle<R>, feeds: &[Feed]) {
     for feed in feeds {
-        println!("Fetching: {}", feed.url);
         match fetch_feed(&feed.url, &feed.feed_type) {
             Ok(items) => {
                 app.emit_all("new-rss-items", &items).unwrap();
             }
-            Err(e) => eprintln!("Error fetching feed {}: {}", feed.url, e),
+            Err(e) => {
+                app.emit_all("feed-error", &format!("Error fetching feed {}: {}", feed.url, e)).unwrap();
+                eprintln!("Error fetching feed {}: {}", feed.url, e);
+            }
         }
     }
 }
