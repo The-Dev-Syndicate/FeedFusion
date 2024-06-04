@@ -36,6 +36,7 @@ pub fn get_articles() -> Vec<Article> {
 
 #[command]
 pub fn load_feeds() -> Vec<Feed> {
+    println!("this was called");
     // TODO: This will come from in memory DB eventually
     let f1: Feed = Feed::new(
         "https://feed2.is.fake".to_string(),
