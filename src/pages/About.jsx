@@ -2,16 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 
 export default function About() {
-  const [rssItems, setRssItems] = useState([]);
-  const [errors, setErrors] = useState([]);
+  const [rssItems, setRssItems] = useState([]); // TODO: to make this static we should use a React context provider so the feeds don't disappear on page navigation
+  const [errors, setErrors] = useState([]); // TODO: to make this static we should use a React context provider so the feeds don't disappear on page navigation
 
   useEffect(() => {
     const unlistenRss = listen('new-rss-items', (event) => {
-      setRssItems(event.payload);
+      setRssItems((prevItems) => [...prevItems, ...event.payload]); // This is the "append" syntax
     });
 
     const unlistenError = listen('feed-error', (event) => {
-      setErrors((prevErrors) => [...prevErrors, event.payload]);
+      setErrors((prevErrors) => [...prevErrors, event.payload]); // This is the "append" syntax
     });
 
     return () => {
