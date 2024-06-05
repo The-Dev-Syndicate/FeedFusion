@@ -17,6 +17,7 @@ pub fn greet(name: &str) -> String {
 
 #[command]
 pub fn get_articles() -> Vec<Article> {
+    // TODO: This function can actually be removed in favor of feed.rs push flow
     // Return two hardcoded fake articles for now
     vec![
         Article::new(
@@ -36,7 +37,6 @@ pub fn get_articles() -> Vec<Article> {
 
 #[command]
 pub fn load_feeds() -> Vec<Feed> {
-    println!("this was called");
     // TODO: This will come from in memory DB eventually
     let f1: Feed = Feed::new(
         "https://feed2.is.fake".to_string(),

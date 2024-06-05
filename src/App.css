@@ -215,5 +215,5 @@ html,
 .articles-container {
   height: 85vh; /* Adjust this value based on your layout */
   overflow-y: auto;
-  /* padding-bottom: 10%; */
+  padding-right: 10%;
 }

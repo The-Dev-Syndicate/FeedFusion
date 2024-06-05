@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Article from '../components/general/ArticleCard';
 import { listen } from '@tauri-apps/api/event';
 
 export default function About() {
@@ -22,17 +23,11 @@ export default function About() {
 
   return (
     <div className="articles-container">
-      <h1>Temp render of new feed items</h1>
-      <ul>
-        {rssItems.map((item, index) => (
-          <li key={index}>
-            <a href={item.link} target="_blank" rel="noopener noreferrer">
-              {item.title}
-            </a>
-            <p>{item.description}</p>
-          </li>
-        ))}
-      </ul>
+    <h1>Temp render of new feed items</h1>
+    <hl/>
+      {rssItems.map((article, index) => (
+        <Article key={index} title={article.title} description={article.description} author={"LV"} datetime={""}/>
+      ))}
       {errors.length > 0 && (
         <div>
           <h2>Errors:</h2>
