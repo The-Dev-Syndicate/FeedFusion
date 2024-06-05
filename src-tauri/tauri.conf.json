@@ -58,7 +58,15 @@
         "height": 600,
         "resizable": true,
         "title": "Feed Fusion",
-        "width": 900
+        "width": 900,
+        "visible": false
+      },
+      {
+        "width": 400,
+        "height": 200,
+        "decorations": false,
+        "url": "splashscreen.html",
+        "label": "splashscreen"
       }
     ]
   }

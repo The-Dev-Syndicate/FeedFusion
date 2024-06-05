@@ -6,6 +6,7 @@ import './App.css' // TODO: When a css framework is picked we can add that impor
 import About from './pages/About';
 import Layout from './components/PageLayouts/Base'; // If you look at BaseLayout you will see we default export Base so we can just import under any name we want
 import NotFound from './pages/NotFound';
+import { FeedProvider } from './components/contexts/FeedProvider';
 
 const router = createBrowserRouter([
   {
@@ -29,7 +30,9 @@ const router = createBrowserRouter([
 ]);
 
 createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-  </React.StrictMode>
+  <FeedProvider>
+    <React.StrictMode>
+      <RouterProvider router={router} />
+    </React.StrictMode>
+  </FeedProvider>
 );
