@@ -8,7 +8,7 @@ use tauri::{AppHandle, Runtime};
 #[derive(Serialize, Debug)]
 pub struct FeedItem {
     title: String,
-    link: String,
+    source: String,
     description: String, // TODO: fill in the rest of these making some optional while others should be required
                          // (see RSS Specs : https://www.rssboard.org/rss-specification#requiredChannelElements)
                          // (see ATOM Specs: https://validator.w3.org/feed/docs/atom.html)
@@ -50,7 +50,7 @@ fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
             } else {
                 Some(FeedItem {
                     title: item.title().unwrap_or_default().to_string(),
-                    link: item.link().unwrap_or_default().to_string(),
+                    source: item.link().unwrap_or_default().to_string(),
                     description: item.description().unwrap_or_default().to_string(),
                 })
             }
@@ -75,7 +75,7 @@ fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
 
             Some(FeedItem {
                 title,
-                link: entry
+                source: entry
                     .links()
                     .first()
                     .map(|link| link.href().to_string())
