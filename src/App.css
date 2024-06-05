@@ -211,3 +211,9 @@ html,
   font-size: 12px;
   color: #666;
 }
+
+.articles-container {
+  height: 85vh; /* Adjust this value based on your layout */
+  overflow-y: auto;
+  padding-right: 10%;
+}
