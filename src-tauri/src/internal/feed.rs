@@ -5,13 +5,49 @@ use std::time::Duration;
 use tauri::Manager;
 use tauri::{AppHandle, Runtime};
 
-#[derive(Serialize, Debug)]
-pub struct FeedItem {
-    title: String,
-    source: String,
-    description: String, // TODO: fill in the rest of these making some optional while others should be required
-                         // (see RSS Specs : https://www.rssboard.org/rss-specification#requiredChannelElements)
-                         // (see ATOM Specs: https://validator.w3.org/feed/docs/atom.html)
+#[derive(Serialize)]
+pub enum FeedItem{
+    Rss(RssEntry),
+    Atom(AtomEntry)
+}
+
+#[derive(Clone)]
+pub enum FeedType {
+    RSS,
+    ATOM,
+}
+
+#[derive(Serialize)]
+pub struct RssEntry {
+    // Required fields
+    pub title: String,
+    pub link: Option<String>,
+    pub description: Option<String>,
+    // Optional fields
+    pub pub_date: Option<String>,
+    pub author: Option<String>,
+    pub category: Option<String>,
+    pub comments: Option<String>,
+    pub enclosure: Option<String>,
+    pub guid: Option<String>,
+}
+
+// Struct for Atom item
+#[derive(Serialize)]
+pub struct AtomEntry {
+    // Required fields
+    pub title: String,
+    pub link: Option<String>,
+    pub summary: Option<String>,
+    // Optional fields
+    pub id: Option<String>,
+    pub updated: Option<String>,
+    pub author: Option<String>,
+    pub category: Option<String>,
+    pub content: Option<String>,
+    pub contributor: Option<String>,
+    pub published: Option<String>,
+    pub rights: Option<String>,
 }
 
 #[derive(Clone)]
@@ -19,12 +55,6 @@ pub struct Feed {
     pub url: String,
     pub feed_type: FeedType,
     pub poll_interval: Duration,
-}
-
-#[derive(Clone)]
-pub enum FeedType {
-    RSS,
-    ATOM,
 }
 
 fn fetch_feed(
@@ -36,7 +66,6 @@ fn fetch_feed(
         FeedType::ATOM => fetch_atom(url),
     }
 }
-
 fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
     let response = get(url)?.text()?;
     let channel = rss::Channel::read_from(response.as_bytes())?;
@@ -45,21 +74,27 @@ fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
         .items()
         .iter()
         .filter_map(|item| {
-            if item.title().is_none() {
-                None
-            } else {
-                Some(FeedItem {
-                    title: item.title().unwrap_or_default().to_string(),
-                    source: item.link().unwrap_or_default().to_string(),
-                    description: item.description().unwrap_or_default().to_string(),
-                })
+            let title = item.title().map(|s| s.to_string());
+            if title.is_none() {
+                return None;
             }
+
+            Some(FeedItem::Rss(RssEntry {
+                title: title.unwrap(),
+                link: item.link().map(|s| s.to_string()),
+                description: item.description().map(|s| s.to_string()),
+                pub_date: item.pub_date().map(|s| s.to_string()),
+                author: item.author().map(|s| s.to_string()),
+                category: item.categories().first().map(|c| c.name().to_string()),
+                comments: item.comments().map(|s| s.to_string()),
+                enclosure: item.enclosure().map(|e| e.url().to_string()),
+                guid: item.guid().map(|g| g.value().to_string()),
+            }))
         })
         .collect();
 
     Ok(items)
 }
-
 fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
     let response = get(url)?.text()?;
     let feed = atom_syndication::Feed::read_from(response.as_bytes())?;
@@ -73,18 +108,19 @@ fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
                 return None;
             }
 
-            Some(FeedItem {
+            Some(FeedItem::Atom(AtomEntry {
                 title,
-                source: entry
-                    .links()
-                    .first()
-                    .map(|link| link.href().to_string())
-                    .unwrap_or_default(),
-                description: entry
-                    .summary()
-                    .map(|summary| summary.to_string())
-                    .unwrap_or_default(),
-            })
+                link: entry.links().first().map(|link| link.href().to_string()),
+                summary: entry.summary().map(|summary| summary.to_string()),
+                id: Some(entry.id().to_string()),
+                updated: Some(entry.updated().to_string()),
+                author: entry.authors().first().map(|person| person.name().to_string()),
+                category: entry.categories().first().map(|category| category.term().to_string()),
+                content: entry.content().map(|content| content.value().unwrap_or_default().to_string()),
+                contributor: entry.contributors().first().map(|person| person.name().to_string()),
+                published: entry.published.map(|pub_date| pub_date.to_string()),
+                rights: entry.rights().map(|rights| rights.to_string()),
+            }))
         })
         .collect();
     Ok(items)

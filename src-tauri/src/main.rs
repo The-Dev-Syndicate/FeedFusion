@@ -38,12 +38,12 @@ fn main() {
                 internal::feed::Feed {
                     url: "https://lorem-rss.herokuapp.com/feed?unit=day".to_string(),
                     feed_type: FeedType::RSS,
-                    poll_interval: Duration::from_secs(60),
+                    poll_interval: Duration::from_secs(24 * 60 * 60), // 24 hours,
                 },
                 internal::feed::Feed {
                     url: "https://run.mocky.io/v3/d3d616ed-4780-41f9-915f-bce277ae0afe".to_string(), // this url may need to be regenerated every so often
                     feed_type: FeedType::ATOM,
-                    poll_interval: Duration::from_secs(20), //(24 * 60 * 60), // 24 hours
+                    poll_interval: Duration::from_secs(20),
                 },
                 // Add more feeds as needed
             ];
