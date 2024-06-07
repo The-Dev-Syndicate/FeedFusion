@@ -217,3 +217,9 @@ html,
   overflow-y: auto;
   padding-right: 10%;
 }
+
+.article-container {
+  height: 85vh;
+  overflow-y: auto;
+  padding-right: 10%;
+}

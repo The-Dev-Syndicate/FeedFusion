@@ -7,11 +7,24 @@ use tauri::{AppHandle, Runtime};
 
 #[derive(Serialize, Debug)]
 pub struct FeedItem {
-    title: String,
-    link: String,
-    description: String, // TODO: fill in the rest of these making some optional while others should be required
-                         // (see RSS Specs : https://www.rssboard.org/rss-specification#requiredChannelElements)
-                         // (see ATOM Specs: https://validator.w3.org/feed/docs/atom.html)
+    // Required fields (combined from RSS and Atom)
+    pub title: String,               // Required in both RSS and Atom
+    pub link: Option<String>,        // Required in RSS, optional in Atom
+    pub description: Option<String>, // Required in RSS, summary in Atom
+    pub id: Option<String>,          // Required in Atom
+    pub updated: Option<String>,     // Required in Atom
+
+    // Optional fields (combined from RSS and Atom)
+    pub author: Option<String>,      // Optional in both RSS and Atom
+    pub category: Option<String>,    // Optional in both RSS and Atom
+    pub comments: Option<String>,    // Optional in RSS
+    pub enclosure: Option<String>,   // Optional in RSS
+    pub guid: Option<String>,        // Optional in RSS
+    pub pub_date: Option<String>,    // Optional in RSS (pubDate)
+    pub source: Option<String>,      // Optional in both RSS and Atom
+    pub content: Option<String>,     // Optional in Atom
+    pub contributor: Option<String>, // Optional in Atom
+    pub rights: Option<String>,      // Optional in Atom
 }
 
 #[derive(Clone)]
@@ -45,15 +58,28 @@ fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
         .items()
         .iter()
         .filter_map(|item| {
-            if item.title().is_none() {
-                None
-            } else {
-                Some(FeedItem {
-                    title: item.title().unwrap_or_default().to_string(),
-                    link: item.link().unwrap_or_default().to_string(),
-                    description: item.description().unwrap_or_default().to_string(),
-                })
+            let title = item.title().map(|s| s.to_string());
+            if title.is_none() {
+                return None;
             }
+
+            Some(FeedItem {
+                title: title.unwrap(),
+                link: item.link().map(|s| s.to_string()),
+                description: item.description().map(|s| s.to_string()),
+                id: item.guid().map(|g| g.value().to_string()),
+                updated: item.pub_date().map(|s| s.to_string()), // RSS does not have 'updated', so using 'pub_date'
+                author: item.author().map(|s| s.to_string()),
+                category: item.categories().first().map(|c| c.name().to_string()),
+                comments: item.comments().map(|s| s.to_string()),
+                enclosure: item.enclosure().map(|e| e.url().to_string()),
+                guid: item.guid().map(|g| g.value().to_string()),
+                pub_date: item.pub_date().map(|s| s.to_string()),
+                source: item.source().map(|s| s.url().to_string()),
+                content: item.content().map(|s| s.to_string()),
+                contributor: None, // RSS does not have 'contributor'
+                rights: None,                                      // RSS does not have 'rights'
+            })
         })
         .collect();
 
@@ -75,15 +101,21 @@ fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
 
             Some(FeedItem {
                 title,
-                link: entry
-                    .links()
-                    .first()
-                    .map(|link| link.href().to_string())
-                    .unwrap_or_default(),
-                description: entry
-                    .summary()
-                    .map(|summary| summary.to_string())
-                    .unwrap_or_default(),
+                link: entry.links().first().map(|link| link.href().to_string()),
+                description: entry.summary().map(|summary| summary.to_string()),
+                id: Some(entry.id().to_string()),
+                updated: Some(entry.updated().to_string()),
+
+                author: entry.authors().first().map(|person| person.name().to_string()),
+                category: entry.categories().first().map(|category| category.term().to_string()),
+                comments: None, // Atom does not have comments
+                enclosure: None, // Atom does not have enclosure
+                guid: None, // Atom does not have guid
+                pub_date: None, // Atom does not have pubDate, using published instead
+                source: None, // Atom does not have source in entries
+                content: entry.content().map(|content| content.value().unwrap_or_default().to_string()),
+                contributor: entry.contributors().first().map(|person| person.name().to_string()),
+                rights: entry.rights().map(|rights| rights.to_string()),
             })
         })
         .collect();
