@@ -9,6 +9,8 @@ export default function Articles() {
   const { rssItems } = useContext(RssItemsContext); // Use context directly, no need to destructure
   const { errors } = useContext(ErrorsContext); // Use context directly, no need to destructure
 
+  console.log(rssItems);
+
   const handleCardClick = (id) => {
     console.log('Clicked index:', id); // Debug log
     navigate(`/article/${id}`);
@@ -19,10 +21,10 @@ export default function Articles() {
       {rssItems.map((article, index) => (
         <div key={index} onClick={() => handleCardClick(index)}>
           <ArticleCard
-            title={article.title}
-            date={article.date}
-            author={article.author}
-            description={article.description}
+            title={article.Rss ? article.Rss.title : article.Atom.title}
+            date={article.Rss ? article.Rss.pub_date : article.Atom.published}
+            author={article.Rss ? article.Rss.author : article.Atom.author}
+            description={article.Rss ? article.Rss.description : article.Atom.summary}
           />
         </div>))}
       {errors.length > 0 && (
