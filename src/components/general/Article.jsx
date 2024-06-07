@@ -6,13 +6,13 @@ import parse, { domToReact } from 'html-react-parser';
 import { RssItemsContext } from '../contexts/FeedProvider';
 
 export default function Article() {
-    const { id } = useParams();
+    const { title } = useParams();
     const { rssItems } = useContext(RssItemsContext);
-    console.log('Article Index:', id); // Debug log
-    const article = rssItems[id];
+    console.log('Article Index:', title); // Debug log
+    const article = rssItems.find(item => (item.Rss && item.Rss.title === title) || (item.Atom && item.Atom.title === title));
 
     if (!article) {
-        return <div>Article not found</div>;
+        return <div>Article not found looking for <strong>{title}</strong></div>;
     }
 
     // ensure that each element in the content has a class name that 
@@ -50,7 +50,7 @@ export default function Article() {
             <h1>{article.Rss ? article.Rss.title : article.Atom.title} - <small>{article.Rss ? article.Rss.category : article.Atom.category}</small></h1>
             <p><small>{article.Rss && article.Rss.link ? article.Rss.link : (article.Atom && article.Atom.link ? article.Atom.link : 'No link available')}</small></p>
             <p><small>{article.Rss && article.Rss.description ? article.Rss.description : (article.Atom && article.Atom.summary ? article.Atom.summary : 'No summary available')}</small></p>
-            <p>Entry by <b>{article.Rss ? article.Rss.author : article.Atom.author}</b> on {article.Rss ? article.Rss.pub_date : article.Atom.published}</p>
+            <p>Entry by <b>{article.Rss ? article.Rss.author : article.Atom.author}</b> on {article.Rss ? article.Rss.pub_date : article.Atom.pub_date}</p>
             <p>From {article.Rss ? article.Rss.source : article.Atom.id}</p>
             <p>Conrtibuters [{article.Rss ? article.Rss.contributor : article.Atom.contributor}]</p>
             {/* <ul>
