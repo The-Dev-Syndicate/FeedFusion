@@ -3,7 +3,6 @@ import React, { useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import parse, { domToReact } from 'html-react-parser';
 
-
 import { RssItemsContext } from '../contexts/FeedProvider';
 
 export default function Article() {
