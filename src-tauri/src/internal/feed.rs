@@ -46,7 +46,7 @@ pub struct AtomEntry {
     pub category: Option<String>,
     pub content: Option<String>,
     pub contributor: Option<String>,
-    pub published: Option<String>,
+    pub pub_date: Option<String>,
     pub rights: Option<String>,
 }
 
@@ -118,7 +118,7 @@ fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
                 category: entry.categories().first().map(|category| category.term().to_string()),
                 content: entry.content().map(|content| content.value().unwrap_or_default().to_string()),
                 contributor: entry.contributors().first().map(|person| person.name().to_string()),
-                published: entry.published.map(|pub_date| pub_date.to_string()),
+                pub_date: entry.published.map(|pub_date| pub_date.to_string()),
                 rights: entry.rights().map(|rights| rights.to_string()),
             }))
         })

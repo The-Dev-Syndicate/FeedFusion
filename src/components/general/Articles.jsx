@@ -11,18 +11,18 @@ export default function Articles() {
 
   console.log(rssItems);
 
-  const handleCardClick = (id) => {
-    console.log('Clicked index:', id); // Debug log
-    navigate(`/article/${id}`);
+  const handleCardClick = (title) => {
+    console.log('Clicked index:', title); // Debug log
+    navigate(`/article/${title}`);
   };
 
   return (
     <div className="articles-container">
       {rssItems.map((article, index) => (
-        <div key={index} onClick={() => handleCardClick(index)}>
+        <div key={index} onClick={() => handleCardClick(article.Rss ? article.Rss.title : article.Atom.title)}>
           <ArticleCard
             title={article.Rss ? article.Rss.title : article.Atom.title}
-            date={article.Rss ? article.Rss.pub_date : article.Atom.published}
+            date={article.Rss ? article.Rss.pub_date : article.Atom.pub_date}
             author={article.Rss ? article.Rss.author : article.Atom.author}
             description={article.Rss ? article.Rss.description : article.Atom.summary}
           />
