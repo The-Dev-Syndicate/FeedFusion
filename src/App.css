@@ -223,3 +223,7 @@ html,
   overflow-y: auto;
   padding-right: 10%;
 }
+
+.article-p {
+  color: red; /* Just a toy example of how we can control the article's specifically */
+}
