@@ -14,8 +14,22 @@ export default function Article() {
     }
 
     return (
-        <div>
+        <div className='article-container'>
             <h1>{article.title}</h1>
+            <ul>
+                <li>link: {article.link}</li>
+                <li>desc: {article.description}</li>
+                <li>id: {article.id}</li>
+                <li>cata: {article.category}</li>
+                <li>comments: {article.comments}</li>
+                <li>encloser: {article.enclosure}</li>
+                <li>guid: {article.guid}</li>
+                <li>pub_date: {article.pub_date}</li>
+                <li>source: {article.source}</li>
+                <li>content: {article.content}</li>
+                <li>contributor: {article.contributor}</li>
+                <li>rights: {article.rights}</li>
+            </ul>
             <p><strong>Date Published:</strong> {article.date}</p>
             <p><strong>Author:</strong> {article.author}</p>
             <p>{article.description}</p>
