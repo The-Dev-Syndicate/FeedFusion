@@ -22,6 +22,7 @@ tauri = { version = "1.6.4", features = [] }
 serde_yaml = "0.9.34"
 lazy_static = "1.4.0"
 url = "2.5.0"
+rusqlite = { version = "0.31.0", features = ["bundled"] }
 
 
 [features]

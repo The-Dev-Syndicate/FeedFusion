@@ -10,6 +10,9 @@ pub enum FeedError {
     InvalidUrl,
 }
 
+// CRUD functions for DB
+// #[command] CRUD x4
+
 #[command]
 pub fn greet(name: &str) -> String {
     format!("Hello, {}!", name)

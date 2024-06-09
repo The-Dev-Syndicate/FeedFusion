@@ -8,7 +8,16 @@ use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
 // TODO: We should add some configuration files so that the menu / port / etc. are customizable via config
 
 fn main() {
-    let menu = generate_menu();
+      let menu = generate_menu();
+      
+      // create sqliteDB -- including tables
+      let fake_data = internal::sqlite_db::create_and_retrieve_fake_data().expect("Panic with the fake data");
+      println!("\nMAIN FUNCTION\n");
+
+      for a in fake_data {
+        println!("ARTICLE: {:?}", a);
+      }
+
     tauri::Builder::default()
         .menu(menu) // Use the built above menu
         // This handles the events that the menu creates
@@ -29,10 +38,12 @@ fn main() {
             internal::api::add_feed,
             internal::api::load_feeds,
             internal::api::get_articles
+            // add CRUD functions from API
+            // internal::sqliteDB::retrieve_articles // exposes to front end to use 
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
+      }
 
 fn generate_menu() -> Menu {
         // Create an internal menu
