@@ -1,36 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import Article from './ArticleCard';
-import { invoke } from '@tauri-apps/api';
+import React, { useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-function Articles() {
-  const [articles, setArticles] = useState([]);
+import ArticleCard from '../general/ArticleCard';
+import { RssItemsContext, ErrorsContext } from '../contexts/FeedProvider';
 
-  const fetchArticles = async () => {
-    try {
-      const response = await invoke('get_articles');
-      setArticles(response);
-    } catch (error) {
-      console.error('Error fetching articles:', error);
-    }
+export default function Articles() {
+  const navigate = useNavigate();
+  const { rssItems } = useContext(RssItemsContext); // Use context directly, no need to destructure
+  const { errors } = useContext(ErrorsContext); // Use context directly, no need to destructure
+
+  console.log(rssItems);
+
+  const handleCardClick = (title) => {
+    console.log('Clicked index:', title); // Debug log
+    navigate(`/article/${title}`);
   };
-
-  useEffect(() => {
-    fetchArticles();
-  }, []);
 
   return (
     <div className="articles-container">
-      {articles.map((article, index) => (
-        <Article
-          key={index}
-          title={article.title}
-          description={article.description}
-          author={article.author}
-          datetime={article.datetime}
-        />
-      ))}
+      {rssItems.map((article, index) => (
+        <div key={index} onClick={() => handleCardClick(article.Rss ? article.Rss.title : article.Atom.title)}>
+          <ArticleCard
+            title={article.Rss ? article.Rss.title : article.Atom.title}
+            date={article.Rss ? article.Rss.pub_date : article.Atom.pub_date}
+            author={article.Rss ? article.Rss.author : article.Atom.author}
+            description={article.Rss ? article.Rss.description : article.Atom.summary}
+          />
+        </div>))}
+      {errors.length > 0 && (
+        <div>
+          <h2>Errors:</h2>
+          <ul>
+            {errors.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
-
-export default Articles;

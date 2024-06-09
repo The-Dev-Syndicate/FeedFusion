@@ -23,6 +23,9 @@ serde_yaml = "0.9.34"
 lazy_static = "1.4.0"
 url = "2.5.0"
 rusqlite = { version = "0.31.0", features = ["bundled"] }
+reqwest = { version = "0.11", features = ["blocking"] }
+rss = "2.0.8"
+atom_syndication = "0.12.3"
 
 
 [features]
