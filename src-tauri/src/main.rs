@@ -12,15 +12,23 @@ use internal::feed::FeedType;
 // TODO: We should add some configuration files so that the menu / port / etc. are customizable via config
 
 fn main() {
-      let menu = generate_menu();
-      
-      // create sqliteDB -- including tables
-      let fake_data = internal::sqlite_db::create_and_retrieve_fake_data().expect("Panic with the fake data");
-      println!("\nMAIN FUNCTION\n");
+    let menu = generate_menu();
+    
+    // create sqliteDB -- including tables, generate fake data
+    internal::sqlite_db::create_db().expect("Panic create DB");
+    internal::sqlite_db::create_fake_data().expect("Panic create fake data");
+    
+    // Retrieve fake data
+    let fake_data = internal::sqlite_db::retrieve_articles().expect("Panic query fake data");
+    
+    // Display fake data
+    println!("\nMAIN FUNCTION\n---------------------------------------------");
 
-      for a in fake_data {
-        println!("ARTICLE: {:?}", a);
-      }
+    for a in fake_data {
+    println!("ARTICLE: {:?}", a);
+    }
+
+    println!("---------------------------------------------\n");
 
     tauri::Builder::default()
         .setup(|app| {
@@ -82,7 +90,7 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-      }
+    }
 
 fn generate_menu() -> Menu {
     // Create an internal menu

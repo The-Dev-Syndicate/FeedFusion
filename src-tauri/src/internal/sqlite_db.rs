@@ -1,20 +1,25 @@
-use tauri::command;
+// use tauri::command;
 use rusqlite::{params, Connection, Result};
 use crate::internal::article::Article;
-use crate::internal::api; //::get_articles; // is this correct?
+// use crate::internal::api; //::get_articles; // is this correct?
 
 //#[derive(Debug)]
 
 // #[command]
-pub fn create_and_retrieve_fake_data() ->Result<Vec<Article>> { //Result<()> {
+// pub fn create_and_retrieve_fake_data() ->Result<Vec<Article>> { //Result<()> {
+pub fn create_db() -> Result<Connection> {
     //TODO: make this persistant
-    let conn = Connection::open_in_memory()?;
+    // let conn = Connection::open_in_memory()?;
+    
+    let path = "./local_db.db3";
+    let conn = Connection::open(path)?;
+    print!("{:?}\n", conn.is_autocommit());
 
     // TODO: Only create DB & tables the first time its opened
+    // TODO: Create other tables (feeds, categories, etc.)
     conn.execute(
-        // id  INTEGER PRIMARY KEY,
-        "CREATE TABLE articles (
-            id  INTEGER PRIMARY KEY,
+        "CREATE TABLE  IF NOT EXISTS articles (
+            id  INTEGER PRIMARY KEY AUTOINCREMENT,
             title   TEXT NOT NULL,
             description TEXT,
             author TEXT,
@@ -22,26 +27,58 @@ pub fn create_and_retrieve_fake_data() ->Result<Vec<Article>> { //Result<()> {
         )",
         [], // list of parameters
     )?;
+    
+    Ok(conn)
+}
 
-    // TODO: Actually read these articles from the feed
-    // For now, hard code to test
-    let orig_articles: Vec<Article> = api::get_articles(); // correct way to use internal classes?
+pub fn create_fake_data() -> Result<()> {
+    // let conn = Connection::open_in_memory()?;
 
+    let path = "./local_db.db3";
+    let conn = Connection::open(path)?;
+    print!("{:?}\n", conn.is_autocommit());
+    
+    // TODO: Actually read these articles from the feed, for now, hard code to test
+    // let orig_articles: Vec<Article> = api::get_articles(); // correct way to use internal classes?
+
+    let orig_articles: Vec<Article> = vec![
+        Article::new(
+            "First Article",
+            "This is the description of the first article.",
+            "John Doe",
+            "2024-05-30T12:00:00",
+        ),
+        Article::new(
+            "Second Article",
+            "This is the description of the second article.",
+            "Jane Smith",
+            "2024-05-31T09:30:00",
+        ),
+    ];
+
+    let mut i: i32 = 1;
+    
     for a in orig_articles { // PK auto incremented in SQLite/rusqulite
         conn.execute(
-            "INSERT INTO articles
-                (title, description, author, datetime)
+            "INSERT OR IGNORE INTO articles
+                (id, title, description, author, datetime)
                 VALUES
-                (?1, ?2, ?3, ?4)
+                (?1, ?2, ?3, ?4, ?5)
                 ",
-                params![a.title, a.description, a.author, a.datetime]
+                params![i, a.title, a.description, a.author, a.datetime]
         )?;
+        i += 1;
     }
-// }
+    Ok(())
+}
 
 // #[command] // If I need to call this command from the front end -- for tauri wrappers to use
-// pub fn retrieve_articles() -> Result<Vec<Article>> { // Vec<Article> {
+pub fn retrieve_articles() -> Result<Vec<Article>> { // Vec<Article> {
     // let conn = Connection::open_in_memory()?;
+    
+    let path = "./local_db.db3";
+    let conn = Connection::open(path)?;
+    print!("{:?}\n", conn.is_autocommit());
 
     // TODO: read in select statement, hard code for now
     let mut stmt = conn.prepare(

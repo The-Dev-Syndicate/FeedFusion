@@ -4,6 +4,7 @@ use url::Url;
 
 use crate::internal::article::Article;
 use crate::internal::feed_config::{Feed, FEED_CONFIGURATION};
+use crate::internal::sqlite_db;
 
 #[derive(Debug)]
 pub enum FeedError {
@@ -22,20 +23,24 @@ pub fn greet(name: &str) -> String {
 pub fn get_articles() -> Vec<Article> {
     // TODO: This function can actually be removed in favor of feed.rs push flow
     // Return two hardcoded fake articles for now
-    vec![
-        Article::new(
-            "First Article",
-            "This is the description of the first article.",
-            "John Doe",
-            "2024-05-30T12:00:00",
-        ),
-        Article::new(
-            "Second Article",
-            "This is the description of the second article.",
-            "Jane Smith",
-            "2024-05-31T09:30:00",
-        ),
-    ]
+    // vec![
+    //     Article::new(
+    //         "First Article",
+    //         "This is the description of the first article.",
+    //         "John Doe",
+    //         "2024-05-30T12:00:00",
+    //     ),
+    //     Article::new(
+    //         "Second Article",
+    //         "This is the description of the second article.",
+    //         "Jane Smith",
+    //         "2024-05-31T09:30:00",
+    //     ),
+    // ]
+
+    // let fake_data = internal::sqlite_db::retrieve_articles().expect("Panic query fake data");
+    let db_articles = sqlite_db::retrieve_articles().expect("Panic query fake data");
+    return db_articles;
 }
 
 #[command]
