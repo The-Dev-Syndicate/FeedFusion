@@ -1,7 +1,7 @@
 // use tauri::command;
 use rusqlite::{params, Connection, Result};
-use crate::internal::article::Article;
-use crate::internal::feed::{FeedItem, AtomEntry};
+use crate::internal::dbo::article::Article;
+use crate::internal::dbo::feed::{FeedItem, AtomEntry};
 
 //#[derive(Debug)]
 
