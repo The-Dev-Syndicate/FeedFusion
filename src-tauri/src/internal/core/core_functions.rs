@@ -1,49 +1,38 @@
-// File to house backend logic
-use tauri::command;
+// These functions are the supporting core of all API's
 use url::Url;
 
-use crate::internal::article::Article;
+use crate::internal::dbo::article::Article;
 use crate::internal::feed_config::{Feed, FEED_CONFIGURATION};
-use crate::internal::sqlite_db;
 
 #[derive(Debug)]
 pub enum FeedError {
     InvalidUrl,
 }
 
-// CRUD functions for DB
-// #[command] CRUD x4
 
-#[command]
 pub fn greet(name: &str) -> String {
     format!("Hello, {}!", name)
 }
 
-#[command]
 pub fn get_articles() -> Vec<Article> {
     // TODO: This function can actually be removed in favor of feed.rs push flow
     // Return two hardcoded fake articles for now
-    // vec![
-    //     Article::new(
-    //         "First Article",
-    //         "This is the description of the first article.",
-    //         "John Doe",
-    //         "2024-05-30T12:00:00",
-    //     ),
-    //     Article::new(
-    //         "Second Article",
-    //         "This is the description of the second article.",
-    //         "Jane Smith",
-    //         "2024-05-31T09:30:00",
-    //     ),
-    // ]
-
-    // let fake_data = internal::sqlite_db::retrieve_articles().expect("Panic query fake data");
-    let db_articles = sqlite_db::retrieve_articles().expect("Panic query fake data");
-    return db_articles;
+    vec![
+        Article::new(
+            "First Article",
+            "This is the description of the first article.",
+            "John Doe",
+            "2024-05-30T12:00:00",
+        ),
+        Article::new(
+            "Second Article",
+            "This is the description of the second article.",
+            "Jane Smith",
+            "2024-05-31T09:30:00",
+        ),
+    ]
 }
 
-#[command]
 pub fn load_feeds() -> Vec<Feed> {
     // TODO: This will come from in memory DB eventually
     let f1: Feed = Feed::new(
@@ -74,7 +63,6 @@ pub fn load_feeds() -> Vec<Feed> {
     feeds
 }
 
-#[command]
 pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: u8) -> Result<(), String> {
     match validate_and_correct_url(&feed_url) {
         Ok(_) => {
@@ -92,7 +80,7 @@ pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: u8) -> Result<
 }
 
 // -------------------------------------- HELPERS --------------------------------------  \\
-pub fn validate_and_correct_url(feed_url: &str) -> Result<String, FeedError> {
+fn validate_and_correct_url(feed_url: &str) -> Result<String, FeedError> {
     if !feed_url.starts_with("http://") && !feed_url.starts_with("https://") {
         let corrected_url = format!("https://{}", feed_url);
         return validate_url(&corrected_url);

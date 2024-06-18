@@ -1,5 +1,9 @@
-pub mod article; // Declare the articles modules
-pub mod api; // Declare the api module
 pub mod feed_config; // Declare the configuration modules
 pub mod sqlite_db; // Makes publically available
-pub mod feed; // Declare the rss modules
+
+
+// Sub modules
+pub mod app_initialization;
+pub mod api;
+pub mod core;
+pub mod dbo;
