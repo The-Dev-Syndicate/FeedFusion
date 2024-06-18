@@ -19,13 +19,14 @@ fn main() {
     internal::sqlite_db::create_fake_data().expect("Panic create fake data");
     
     // Retrieve fake data
-    let fake_data = internal::sqlite_db::retrieve_articles().expect("Panic query fake data");
-    
+    // let fake_data = internal::sqlite_db::retrieve_articles().expect("Panic query fake data");
+    let fake_data = internal::sqlite_db::db_fetch_feed();
+
     // Display fake data
     println!("\nMAIN FUNCTION\n---------------------------------------------");
 
-    for a in fake_data {
-    println!("ARTICLE: {:?}", a);
+    for e in fake_data {
+        println!("FeedItem: {:?}", e);
     }
 
     println!("---------------------------------------------\n");
@@ -39,7 +40,17 @@ fn main() {
                 // initialize your app here instead of sleeping :)
                 println!("Initializing...");
                 std::thread::sleep(std::time::Duration::from_secs(5)); // FIXME: This is arbitrary time to wait for now but we can do any heavy lifting for DB stuff here
-                println!("Done initializing.");
+                // create sqliteDB -- including tables, generate fake data
+                // internal::sqlite_db::create_db().expect("Panic create DB");
+                // internal::sqlite_db::create_fake_data().expect("Panic create fake data");
+                // let fake_data = internal::sqlite_db::db_fetch_feed();
+                // let fake_data = internal::sqlite_db::retrieve_articles().expect("Panic query fake data");
+
+                // let app_db = app.handle();
+                // app_db.emit_all("new-rss-items", &f).expect("Coolio");
+
+                // for a in fake_data {println!("ARTICLE: {:?}", a)}
+                // println!("Done initializing.");
 
                 // After it's done, close the splashscreen and display the main window
                 splashscreen_window.close().unwrap();

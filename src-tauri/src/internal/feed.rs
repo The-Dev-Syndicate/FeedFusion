@@ -5,7 +5,7 @@ use std::time::Duration;
 use tauri::Manager;
 use tauri::{AppHandle, Runtime};
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)] // Debug for printing to console
 pub enum FeedItem{
     Rss(RssEntry),
     Atom(AtomEntry)
@@ -17,7 +17,7 @@ pub enum FeedType {
     ATOM,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)] // Debug for printing to console
 pub struct RssEntry {
     // Required fields
     pub title: String,
@@ -33,7 +33,7 @@ pub struct RssEntry {
 }
 
 // Struct for Atom item
-#[derive(Serialize)]
+#[derive(Serialize, Debug)] // Debug for printing to console
 pub struct AtomEntry {
     // Required fields
     pub title: String,
@@ -66,8 +66,9 @@ fn fetch_feed(
         FeedType::ATOM => fetch_atom(url),
     }
 }
+
 fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
-    let response = get(url)?.text()?;
+    let response = get(url)?.text()?; // for DB, go to DB not url
     let channel = rss::Channel::read_from(response.as_bytes())?;
 
     let items: Vec<FeedItem> = channel
