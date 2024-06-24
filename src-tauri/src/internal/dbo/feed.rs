@@ -5,13 +5,15 @@ use std::time::Duration;
 use tauri::Manager;
 use tauri::{AppHandle, Runtime};
 
+use crate::internal::sqlite_db;
+
 #[derive(Serialize, Debug)] // Debug for printing to console
 pub enum FeedItem{
     Rss(RssEntry),
     Atom(AtomEntry)
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)] // Debug for printing to console
 pub enum FeedType {
     RSS,
     ATOM,
@@ -50,7 +52,7 @@ pub struct AtomEntry {
     pub rights: Option<String>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)] // Debug for printing to console
 pub struct Feed {
     pub url: String,
     pub feed_type: FeedType,
@@ -97,33 +99,39 @@ fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
     Ok(items)
 }
 fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
-    let response = get(url)?.text()?;
-    let feed = atom_syndication::Feed::read_from(response.as_bytes())?;
+    // let response = get(url)?.text()?;
+    // let feed = atom_syndication::Feed::read_from(response.as_bytes())?;
 
-    let items: Vec<FeedItem> = feed
-        .entries()
-        .iter()
-        .filter_map(|entry| {
-            let title = entry.title().to_string();
-            if title.is_empty() {
-                return None;
-            }
+    // let mut items: Vec<FeedItem> = feed
+    //     .entries()
+    //     .iter()
+    //     .filter_map(|entry| {
+    //         let title = entry.title().to_string();
+    //         if title.is_empty() {
+    //             return None;
+    //         }
 
-            Some(FeedItem::Atom(AtomEntry {
-                title,
-                link: entry.links().first().map(|link| link.href().to_string()),
-                summary: entry.summary().map(|summary| summary.to_string()),
-                id: Some(entry.id().to_string()),
-                updated: Some(entry.updated().to_string()),
-                author: entry.authors().first().map(|person| person.name().to_string()),
-                category: entry.categories().first().map(|category| category.term().to_string()),
-                content: entry.content().map(|content| content.value().unwrap_or_default().to_string()),
-                contributor: entry.contributors().first().map(|person| person.name().to_string()),
-                pub_date: entry.published.map(|pub_date| pub_date.to_string()),
-                rights: entry.rights().map(|rights| rights.to_string()),
-            }))
-        })
-        .collect();
+    //         Some(FeedItem::Atom(AtomEntry {
+    //             title,
+    //             link: entry.links().first().map(|link| link.href().to_string()),
+    //             summary: entry.summary().map(|summary| summary.to_string()),
+    //             id: Some(entry.id().to_string()),
+    //             updated: Some(entry.updated().to_string()),
+    //             author: entry.authors().first().map(|person| person.name().to_string()),
+    //             category: entry.categories().first().map(|category| category.term().to_string()),
+    //             content: entry.content().map(|content| content.value().unwrap_or_default().to_string()),
+    //             contributor: entry.contributors().first().map(|person| person.name().to_string()),
+    //             pub_date: entry.published.map(|pub_date| pub_date.to_string()),
+    //             rights: entry.rights().map(|rights| rights.to_string()),
+    //         }))
+    //     })
+    //     .collect();
+    
+    //###################################################################//
+    let items = sqlite_db::db_fetch_feed_items();
+    // items.append(&mut items_db); // put em together
+    //###################################################################//
+    
     Ok(items)
 }
 
@@ -158,5 +166,6 @@ fn fetch_and_emit_feed<R: Runtime>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let items = fetch_feed(&feed.url, &feed.feed_type)?;
     app.emit_all("new-rss-items", &items)?;
+    
     Ok(())
 }

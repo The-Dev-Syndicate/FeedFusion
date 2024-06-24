@@ -11,4 +11,4 @@ pub fn get_articles() -> Vec<Article> { core_functions::get_articles() }
 pub fn load_feeds() -> Vec<Feed> { core_functions::load_feeds() }
 
 #[command] // Tauri decorator
-pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: u8) -> Result<(), String> { core_functions::add_feed(feed_url, feed_alias, poll_timer) }
+pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: i32) -> Result<(), String> { core_functions::add_feed(feed_url, feed_alias, poll_timer) } // Changed to i32 to handle intervals in seconds

@@ -1,6 +1,9 @@
+// use rusqlite::{params, Connection, Result};
 // These functions are the supporting core of all API's
 use url::Url;
+// use std::collections::HashMap;
 
+use crate::internal;
 use crate::internal::dbo::article::Article;
 use crate::internal::feed_config::{Feed, FEED_CONFIGURATION};
 
@@ -8,6 +11,12 @@ use crate::internal::feed_config::{Feed, FEED_CONFIGURATION};
 pub enum FeedError {
     InvalidUrl,
 }
+
+// #[derive(Debug)] // for sending list of params to DB CRUD operations
+// pub enum ParamsDB {
+//     Text(String),
+//     Integer(i32),
+// }
 
 
 pub fn greet(name: &str) -> String {
@@ -34,45 +43,64 @@ pub fn get_articles() -> Vec<Article> {
 }
 
 pub fn load_feeds() -> Vec<Feed> {
+    
+    //###################################################################//
     // TODO: This will come from in memory DB eventually
-    let f1: Feed = Feed::new(
-        "https://feed2.is.fake".to_string(),
-        "fake".to_string(),
-        Some("Feed 1".to_string()),
-        5,
-    );
-    let f2: Feed = Feed::new(
-        "https://feed1.is.fake".to_string(),
-        "fake".to_string(),
-        Some("Feed 2".to_string()),
-        5,
-    );
-    let f3: Feed = Feed::new(
-        "https://feed3.is.fake".to_string(),
-        "fake".to_string(),
-        None,
-        5,
-    );
+    // This is how to render
+    // let feeds_db = get_feeds_db();
+    // Will comment out dummy feeds f1-f3 below
+    //###################################################################//
 
-    let mut feeds_mutex = FEED_CONFIGURATION.lock().unwrap();
-    feeds_mutex.add_feed(f1);
-    feeds_mutex.add_feed(f2);
-    feeds_mutex.add_feed(f3);
-    let feeds = feeds_mutex.feeds.iter().cloned().collect();
-    // No need to drop the mutex as it will be automatically released when it goes out of scope
-    feeds
+    // let f1: Feed = Feed::new(
+    //     "https://feed2.is.fake".to_string(),
+    //     "fake".to_string(),
+    //     Some("Feed 1".to_string()),
+    //     5,
+    // );
+    // let f2: Feed = Feed::new(
+    //     "https://feed1.is.fake".to_string(),
+    //     "fake".to_string(),
+    //     Some("Feed 2".to_string()),
+    //     5,
+    // );
+    // let f3: Feed = Feed::new(
+    //     "https://feed3.is.fake".to_string(),
+    //     "fake".to_string(),
+    //     None,
+    //     5,
+    // );
+
+    // let mut feeds_mutex = FEED_CONFIGURATION.lock().unwrap();
+    // feeds_mutex.add_feed(f1);
+    // feeds_mutex.add_feed(f2);
+    // feeds_mutex.add_feed(f3);
+    // let feeds = feeds_mutex.feeds.iter().cloned().collect();
+    // // No need to drop the mutex as it will be automatically released when it goes out of scope
+    // feeds
+
+    let feeds_db = internal::sqlite_db::db_fetch_feed_for_front_end().expect("Issue pulling Feeds from DB for FE");
+
+    return feeds_db
 }
 
-pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: u8) -> Result<(), String> {
+pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: i32) -> Result<(), String> { // changed to i32 to handle interval in seconds
     match validate_and_correct_url(&feed_url) {
         Ok(_) => {
             println!("Eventually we will build with {} - {}", feed_alias, poll_timer); // TODO: 
+            //###################################################################//
+            // TODO: PUT FEED INTO DB
+            // example to use: https://mastodon.social/@lunar_vagabond.rss
             // let new_feed = Feed {
             //     category: "null_for_now".to_string(),
             //     url: valid_url,
             //     alias: Some(feed_alias),
             //     poll_timer,
             // };
+            // TODO: Either push new feed to FE, or have a timed listener for new feeds
+            //###################################################################//
+
+            internal::sqlite_db::add_feed_db(feed_url, feed_alias, poll_timer).expect("Error adding new feed");
+
             Ok(())
         }
         Err(FeedError::InvalidUrl) => Err("Invalid URL".to_string()),

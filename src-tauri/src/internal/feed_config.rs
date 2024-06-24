@@ -23,16 +23,16 @@ fn load_feeds() -> Result<Feeds, Box<dyn std::error::Error>> {
     Ok(feeds)
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)] // Debug for printing to console
 pub struct Feed {
     pub category: String,
     pub url: String,
-    pub poll_timer: u8,
+    pub poll_timer: i32, // changed to handle values in seconds
     pub alias: Option<String>,
 }
 
 impl Feed {
-    pub fn new(feed_url: String, category: String, feed_alias: Option<String>, poll_timer: u8) -> Self {
+    pub fn new(feed_url: String, category: String, feed_alias: Option<String>, poll_timer: i32) -> Self { // changed to handle values in seconds
         Self {
             category: category,
             url: feed_url,

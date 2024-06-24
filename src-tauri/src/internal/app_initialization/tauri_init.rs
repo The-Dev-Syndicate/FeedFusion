@@ -2,7 +2,9 @@ use std::time::Duration;
 use tauri::Manager;
 use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
 
+use crate::internal;
 use crate::internal::dbo::feed::FeedType;
+// use crate::internal::sqlite_db;
 
 pub fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let splashscreen_window = app.get_window("splashscreen").unwrap();
@@ -14,10 +16,19 @@ pub fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>>
     let app_handle = app.handle();
     println!("Setting up the app...");
 
+    //###################################################################//
     // TODO: this will come from DB on startup not from requests
+    // I want to load all of the feeds from the DB feeds table
+    // let feeds = get_the_db_feeds();
+    // example to use: https://mastodon.social/@lunar_vagabond.rss
     let feeds = define_feeds();
+    // let feeds = internal::sqlite_db::db_fetch_feeds_for_pull().expect("Error grabbing Feeds for BE");
     crate::internal::dbo::feed::start_feed_fetcher(app_handle, feeds);
+    //###################################################################//
 
+    // Initialize with DB items
+    // let db_feeds = sqlite_db::db_fetch_feed();
+    // sqlite_db::fetch_and_emit_feed_db();
     Ok(())
 }
 

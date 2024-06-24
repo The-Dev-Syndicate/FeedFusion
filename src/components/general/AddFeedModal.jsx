@@ -14,7 +14,7 @@ export default function AddFeedModal({ isOpen, onClose }) {
     e.preventDefault();
     // Perform form validation and submission logic here
     console.log({ url, name: alias, pollTimer });
-    invoke('add_feed_url', { feedUrl: url, feedAlias: alias, pollTimer })
+    invoke('add_feed', { feedUrl: url, feedAlias: alias, pollTimer })
     .then(() => {
       console.log("Feed URL added successfully");
       setUrl('');
