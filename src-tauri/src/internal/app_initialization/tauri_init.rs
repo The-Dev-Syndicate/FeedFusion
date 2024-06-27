@@ -21,10 +21,7 @@ pub fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
-async fn initialize_app(
-    splashscreen_window: tauri::Window,
-    main_window: tauri::Window,
-) {
+async fn initialize_app(splashscreen_window: tauri::Window, main_window: tauri::Window) {
     println!("Initializing...");
     std::thread::sleep(std::time::Duration::from_secs(5)); // FIXME: This is arbitrary time to wait for now but we can do any heavy lifting for DB stuff here
     println!("Done initializing.");
@@ -37,14 +34,14 @@ async fn initialize_app(
 fn define_feeds() -> Vec<crate::internal::dbo::feed::Feed> {
     vec![
         crate::internal::dbo::feed::Feed {
-            url: "https://lorem-rss.herokuapp.com/feed?unit=day".to_string(),
+            url: "https://mastodon.social/@lunar_vagabond.rss".to_string(),
             feed_type: FeedType::RSS,
-            poll_interval: Duration::from_secs(24 * 60 * 60), // 24 hours
+            poll_interval: Duration::from_secs(30),
         },
         crate::internal::dbo::feed::Feed {
             url: "https://run.mocky.io/v3/d3d616ed-4780-41f9-915f-bce277ae0afe".to_string(), // this url may need to be regenerated every so often
             feed_type: FeedType::ATOM,
-            poll_interval: Duration::from_secs(20),
+            poll_interval: Duration::from_secs(60 * 60 * 12),
         },
         // Add more feeds as needed
     ]
