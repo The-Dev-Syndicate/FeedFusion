@@ -16,15 +16,26 @@ export default function Articles() {
     navigate(`/article/${title}`);
   };
 
+  function getFirstSentence(htmlString) {
+    const div = document.createElement('div');
+    div.innerHTML = htmlString;
+    const firstParagraph = div.querySelector('p');
+    if (firstParagraph) {
+      const sentences = firstParagraph.innerText.split('. ');
+      return sentences.length > 0 ? sentences[0] + '.' : '';
+    }
+    return '';
+  }
+
   return (
     <div className="articles-container">
       {rssItems.map((article, index) => (
-        <div key={index} onClick={() => handleCardClick(article.Rss ? article.Rss.title : article.Atom.title)}>
+        <div key={index} onClick={() => handleCardClick(article.Rss ? `${index}-${article.Rss.title}` : article.Atom.title)}>
           <ArticleCard
             title={article.Rss ? article.Rss.title : article.Atom.title}
             date={article.Rss ? article.Rss.pub_date : article.Atom.pub_date}
             author={article.Rss ? article.Rss.author : article.Atom.author}
-            description={article.Rss ? article.Rss.description : article.Atom.summary}
+            description={article.Rss ? getFirstSentence(article.Rss.description) : article.Atom.summary}
           />
         </div>))}
       {errors.length > 0 && (
