@@ -226,7 +226,7 @@ html,
 
 .article-container {
   height: 85vh;
-  verflow-y: auto;
+  overflow-y: auto;
   padding-right: 10%;
 }
 
