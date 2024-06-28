@@ -1,18 +1,17 @@
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-
 import ArticleCard from '../general/ArticleCard';
 import { RssItemsContext, ErrorsContext } from '../contexts/FeedProvider';
+import { SelectedFeedContext } from '../contexts/SelectedFeedContext';
 
 export default function Articles() {
   const navigate = useNavigate();
-  const { rssItems } = useContext(RssItemsContext); // Use context directly, no need to destructure
-  const { errors } = useContext(ErrorsContext); // Use context directly, no need to destructure
-
-  console.log(rssItems);
+  const { rssItems } = useContext(RssItemsContext);
+  const { errors } = useContext(ErrorsContext);
+  const { selectedFeed } = useContext(SelectedFeedContext);
 
   const handleCardClick = (title) => {
-    console.log('Clicked index:', title); // Debug log
+    console.log('Clicked index:', title);
     navigate(`/article/${title}`);
   };
 
@@ -27,9 +26,13 @@ export default function Articles() {
     return '';
   }
 
+  const filteredItems = selectedFeed
+    ? rssItems.filter((article) => article.Rss?.link?.startsWith(selectedFeed) || article.Atom?.link?.startsWith(selectedFeed))
+    : rssItems;
+
   return (
     <div className="articles-container">
-      {rssItems.map((article, index) => (
+      {filteredItems.map((article, index) => (
         <div key={index} onClick={() => handleCardClick(article.Rss ? `${index}-${article.Rss.title}` : article.Atom.title)}>
           <ArticleCard
             title={article.Rss ? article.Rss.title : article.Atom.title}
@@ -37,7 +40,8 @@ export default function Articles() {
             author={article.Rss ? article.Rss.author : article.Atom.author}
             description={article.Rss ? getFirstSentence(article.Rss.description) : article.Atom.summary}
           />
-        </div>))}
+        </div>
+      ))}
       {errors.length > 0 && (
         <div>
           <h2>Errors:</h2>
@@ -51,3 +55,4 @@ export default function Articles() {
     </div>
   );
 }
+
