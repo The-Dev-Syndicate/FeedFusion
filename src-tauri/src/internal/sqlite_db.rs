@@ -25,7 +25,7 @@ pub fn create_db() {
 pub fn create_rss_feed_table() -> Result<Connection> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS RSSFeeds (
@@ -46,7 +46,7 @@ pub fn create_rss_feed_table() -> Result<Connection> {
 pub fn create_atom_feed_table() -> Result<Connection> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS AtomFeeds (
@@ -70,7 +70,7 @@ pub fn create_rss_entry_table() -> Result<Connection> {
     
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
 
     // TODO: Only create DB & tables the first time its opened
     conn.execute(
@@ -100,7 +100,7 @@ pub fn create_atom_entry_table() -> Result<Connection> {
     
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
 
     // TODO: Only create DB & tables the first time its opened
     conn.execute(
@@ -142,7 +142,7 @@ pub fn create_fake_data() {
 pub fn create_fake_feeds() -> Result<()> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
     
     // TODO: create ToSql trait for FeedType, Duration
     let rss_feed = Feed {
@@ -197,12 +197,12 @@ pub fn create_fake_feed_items() -> Result<()> {
 
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
     
     // TODO: Actually read these articles from the feed, for now, hard code to test
     let fake_atom_entry: Vec<AtomEntry> = vec![
         AtomEntry {
-            title: "First Article".to_string(),
+            title: "Fake First Article".to_string(),
             link: Some("url.com".to_string()),
             summary: Some("This is the description of the first article.".to_string()),
             // Optional fields
@@ -245,7 +245,7 @@ pub fn create_fake_feed_items() -> Result<()> {
 pub fn put_rss_feed_db(feed_url: String, poll_timer: i32, feed_category: String, feed_alias: String) -> Result<()> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
     
     conn.execute(
         "INSERT OR IGNORE INTO RSSFeeds
@@ -266,7 +266,7 @@ pub fn put_rss_feed_db(feed_url: String, poll_timer: i32, feed_category: String,
 pub fn put_atom_feed_db(feed_url: String, poll_timer: i32, feed_category: String, feed_alias: String) -> Result<()> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
 
     conn.execute(
         "INSERT OR IGNORE INTO AtomFeeds
@@ -300,7 +300,7 @@ pub fn put_feed_items_db(items: Vec<FeedItem>) -> Result<()> {
 pub fn put_atom_entry_db(e: AtomEntry) -> Result<()> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
     
     conn.execute(
         "INSERT OR IGNORE INTO AtomEntry
@@ -319,7 +319,7 @@ pub fn put_atom_entry_db(e: AtomEntry) -> Result<()> {
 pub fn put_rss_entry_db(e: RssEntry) -> Result<()> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
 
     conn.execute(
         "INSERT OR IGNORE INTO RSSEntry
@@ -351,7 +351,7 @@ pub fn get_feeds_for_front_end_db() -> Result<Vec<FeedFE>> {
 pub fn get_fe_rss_feeds_db() -> Result<Vec<FeedFE>> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
 
     // TODO: read in select statement, hard code for now
     let mut stmt = conn.prepare(
@@ -395,7 +395,7 @@ pub fn get_fe_rss_feeds_db() -> Result<Vec<FeedFE>> {
 pub fn get_fe_atom_feeds_db() -> Result<Vec<FeedFE>> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
 
     // TODO: read in select statement, hard code for now
     let mut stmt = conn.prepare(
@@ -451,7 +451,7 @@ pub fn get_feeds_for_back_end_db() -> Result<Vec<Feed>> {
 pub fn get_be_rss_feeds_db() -> Result<Vec<Feed>> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
 
     // TODO: read in select statement, hard code for now
     // TODO: Control logic that this is a valid SELECT statement
@@ -492,7 +492,7 @@ pub fn get_be_rss_feeds_db() -> Result<Vec<Feed>> {
 pub fn get_be_atom_feeds_db() -> Result<Vec<Feed>> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
 
     // TODO: read in select statement, hard code for now
     // TODO: Control logic that this is a valid SELECT statement
@@ -533,7 +533,7 @@ pub fn get_be_atom_feeds_db() -> Result<Vec<Feed>> {
 fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
 
     // TODO: read in select statement, hard code for now
     let mut stmt = conn.prepare(
@@ -583,7 +583,7 @@ fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
 fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    print!("{:?}\n", conn.is_autocommit());
+    //print!("{:?}\n", conn.is_autocommit());
 
     // TODO: read in select statement, hard code for now
     let mut stmt = conn.prepare(
@@ -637,5 +637,8 @@ pub fn get_feed_items_db() -> Vec<FeedItem> {
     full_feeds.append(&mut atom_feed); // put em together
     full_feeds.append(&mut rss_feed); // put em together
     
+    
+    println!("{:?}", full_feeds.len());
+
     return full_feeds
 }

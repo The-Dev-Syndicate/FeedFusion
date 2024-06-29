@@ -181,10 +181,11 @@ fn fetch_and_emit_feed<R: Runtime>( // This just becomes fetch, no emit
     app: &AppHandle<R>,
     feed: &Feed,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // let items = fetch_feed(&feed.url, &feed.feed_type)?;
-    fetch_feed(&feed.url, &feed.feed_type);
-    // app.emit_all("new-rss-items", &items)?; // NO EMIT, that is done elsewhere, direct from DB
-    
+    // let items = fetch_feed(&feed.url, &feed.feed_type)?; // To be deleted
+    // fetch_feed(&feed.url, &feed.feed_type); // THIS IS ERRORING on RSS item fetch, will send fetched items to DB
+    let items = internal::sqlite_db::get_feed_items_db(); // pull items from DB, not directly from fetch
+    app.emit_all("new-rss-items", &items)?; // NO EMIT, that is done elsewhere, direct from DB
+
     Ok(())
 }
 
