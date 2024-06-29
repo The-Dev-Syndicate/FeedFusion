@@ -21,8 +21,8 @@ pub fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>>
     // I want to load all of the feeds from the DB feeds table
     // let feeds = get_the_db_feeds();
     // example to use: https://mastodon.social/@lunar_vagabond.rss
-    let feeds = define_feeds();
-    // let feeds = internal::sqlite_db::db_fetch_feeds_for_pull().expect("Error grabbing Feeds for BE");
+    // let feeds = define_feeds();
+    let feeds = internal::sqlite_db::get_feeds_for_back_end_db().expect("Error grabbing Feeds for BE");
     crate::internal::dbo::feed::start_feed_fetcher(app_handle, feeds);
     //###################################################################//
 

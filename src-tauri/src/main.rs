@@ -15,9 +15,9 @@ fn main() {
     
     // Retrieve fake data
     // let fake_data = internal::sqlite_db::retrieve_articles().expect("Panic query fake data");
-    let fake_data = internal::sqlite_db::db_fetch_feed_items();
-    let fake_feed_be = internal::sqlite_db::db_fetch_feeds_for_pull();
-    let fake_feed_fe = internal::sqlite_db::db_fetch_feed_for_front_end();
+    let fake_data = internal::sqlite_db::get_feed_items_db();
+    let fake_feed_be = internal::sqlite_db::get_feeds_for_back_end_db();
+    let fake_feed_fe = internal::sqlite_db::get_feeds_for_front_end_db();
 
     // Display fake data
     println!("\nMAIN FUNCTION\n---------------------------------------------");

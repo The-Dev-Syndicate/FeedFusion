@@ -5,7 +5,8 @@ use std::time::Duration;
 use tauri::Manager;
 use tauri::{AppHandle, Runtime};
 
-use crate::internal::sqlite_db;
+use crate::internal;
+use crate::internal::sqlite_db::{self, put_atom_entry_db, put_rss_entry_db};
 
 #[derive(Serialize, Debug)] // Debug for printing to console
 pub enum FeedItem{
@@ -59,30 +60,33 @@ pub struct Feed {
     pub poll_interval: Duration,
 }
 
-fn fetch_feed(
-    url: &str,
-    feed_type: &FeedType,
-) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
-    match feed_type {
-        FeedType::RSS => fetch_rss(url),
-        FeedType::ATOM => fetch_atom(url),
-    }
+fn fetch_feed(url: &str, feed_type: &FeedType) {
+    let new_feed_item = match feed_type {
+        FeedType::RSS => fetch_rss(url).expect("Error fetching RSS feed item"),
+        FeedType::ATOM => fetch_atom(url).expect("Error fetching Atom feed item")
+    };
+
+    // insert newly fetched item into DB
+    internal::sqlite_db::put_feed_items_db(new_feed_item).expect("Error sending fetched feed to DB");
 }
 
 fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
+    println!("Attempting to Fetch Feed from URL: {url}");
     let response = get(url)?.text()?; // for DB, go to DB not url
+    println!("Response {response}");
+
     let channel = rss::Channel::read_from(response.as_bytes())?;
 
     let items: Vec<FeedItem> = channel
         .items()
         .iter()
         .filter_map(|item| {
-            let title = item.title().map(|s| s.to_string());
+            let mut title = item.title().map(|s| s.to_string());
             if title.is_none() {
-                return None;
+                title = Some(channel.title().to_string());
             }
-
             Some(FeedItem::Rss(RssEntry {
+                // title: title.map(|s| s.to_string()),//unwrap(),
                 title: title.unwrap(),
                 link: item.link().map(|s| s.to_string()),
                 description: item.description().map(|s| s.to_string()),
@@ -99,36 +103,36 @@ fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
     Ok(items)
 }
 fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
-    // let response = get(url)?.text()?;
-    // let feed = atom_syndication::Feed::read_from(response.as_bytes())?;
+    let response = get(url)?.text()?;
+    let feed = atom_syndication::Feed::read_from(response.as_bytes())?;
 
-    // let mut items: Vec<FeedItem> = feed
-    //     .entries()
-    //     .iter()
-    //     .filter_map(|entry| {
-    //         let title = entry.title().to_string();
-    //         if title.is_empty() {
-    //             return None;
-    //         }
+    let mut items: Vec<FeedItem> = feed
+        .entries()
+        .iter()
+        .filter_map(|entry| {
+            let title = entry.title().to_string();
+            if title.is_empty() {
+                return None;
+            }
 
-    //         Some(FeedItem::Atom(AtomEntry {
-    //             title,
-    //             link: entry.links().first().map(|link| link.href().to_string()),
-    //             summary: entry.summary().map(|summary| summary.to_string()),
-    //             id: Some(entry.id().to_string()),
-    //             updated: Some(entry.updated().to_string()),
-    //             author: entry.authors().first().map(|person| person.name().to_string()),
-    //             category: entry.categories().first().map(|category| category.term().to_string()),
-    //             content: entry.content().map(|content| content.value().unwrap_or_default().to_string()),
-    //             contributor: entry.contributors().first().map(|person| person.name().to_string()),
-    //             pub_date: entry.published.map(|pub_date| pub_date.to_string()),
-    //             rights: entry.rights().map(|rights| rights.to_string()),
-    //         }))
-    //     })
-    //     .collect();
+            Some(FeedItem::Atom(AtomEntry {
+                title,
+                link: entry.links().first().map(|link| link.href().to_string()),
+                summary: entry.summary().map(|summary| summary.to_string()),
+                id: Some(entry.id().to_string()),
+                updated: Some(entry.updated().to_string()),
+                author: entry.authors().first().map(|person| person.name().to_string()),
+                category: entry.categories().first().map(|category| category.term().to_string()),
+                content: entry.content().map(|content| content.value().unwrap_or_default().to_string()),
+                contributor: entry.contributors().first().map(|person| person.name().to_string()),
+                pub_date: entry.published.map(|pub_date| pub_date.to_string()),
+                rights: entry.rights().map(|rights| rights.to_string()),
+            }))
+        })
+        .collect();
     
     //###################################################################//
-    let items = sqlite_db::db_fetch_feed_items();
+    // let items = sqlite_db::get_feed_items_db();
     // items.append(&mut items_db); // put em together
     //###################################################################//
     
@@ -160,12 +164,17 @@ pub fn start_feed_fetcher<R: Runtime>(app: AppHandle<R>, feeds: Vec<Feed>) {
     }
 }
 
-fn fetch_and_emit_feed<R: Runtime>(
+fn fetch_and_emit_feed<R: Runtime>( // This just becomes fetch, no emit
     app: &AppHandle<R>,
     feed: &Feed,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let items = fetch_feed(&feed.url, &feed.feed_type)?;
-    app.emit_all("new-rss-items", &items)?;
+    // let items = fetch_feed(&feed.url, &feed.feed_type)?;
+    fetch_feed(&feed.url, &feed.feed_type);
+    // app.emit_all("new-rss-items", &items)?; // NO EMIT, that is done elsewhere, direct from DB
     
     Ok(())
 }
+
+// There should be another thread
+// Bulk update (not little constant bombardments to FE)
+// FE listener, Every 30 sec render everything in the DB that is new

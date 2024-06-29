@@ -78,11 +78,14 @@ pub fn load_feeds() -> Vec<Feed> {
     // // No need to drop the mutex as it will be automatically released when it goes out of scope
     // feeds
 
-    let feeds_db = internal::sqlite_db::db_fetch_feed_for_front_end().expect("Issue pulling Feeds from DB for FE");
+    let feeds_db = internal::sqlite_db::get_feeds_for_front_end_db().expect("Issue pulling Feeds from DB for FE");
 
     return feeds_db
 }
 
+// TODO need to know FeedType, add as parameter
+// TODO need to add feed_category as parameter
+// TODO need to get rid of 2 Feed versions (feed.rs, feed_configs.rs)
 pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: i32) -> Result<(), String> { // changed to i32 to handle interval in seconds
     match validate_and_correct_url(&feed_url) {
         Ok(_) => {
@@ -99,7 +102,9 @@ pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: i32) -> Result
             // TODO: Either push new feed to FE, or have a timed listener for new feeds
             //###################################################################//
 
-            internal::sqlite_db::add_feed_db(feed_url, feed_alias, poll_timer).expect("Error adding new feed");
+            // TODO match -> RSS function, Atom function
+            let feed_category: String = "test_category".to_string(); 
+            internal::sqlite_db::put_rss_feed_db(feed_url, poll_timer, feed_category, feed_alias, ).expect("Error adding new feed");
 
             Ok(())
         }

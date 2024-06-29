@@ -42,6 +42,9 @@ impl Feed {
     }
 }
 
+// impl Feed {
+//    pub fn insert()}
+
 #[derive(Deserialize, Serialize, Clone)]
 pub struct Feeds {
     pub feeds: LinkedList<Feed>,
