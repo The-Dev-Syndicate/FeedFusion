@@ -1,5 +1,6 @@
 use reqwest::blocking::get;
 use serde::Serialize;
+use std::sync::mpsc::channel;
 use std::thread;
 use std::time::Duration;
 use tauri::Manager;
@@ -11,7 +12,7 @@ use crate::internal::sqlite_db::{self, put_atom_entry_db, put_rss_entry_db};
 #[derive(Serialize, Debug)] // Debug for printing to console
 pub enum FeedItem{
     Rss(RssEntry),
-    Atom(AtomEntry)
+    Atom(AtomEntry),
 }
 
 #[derive(Clone, Debug)] // Debug for printing to console
@@ -102,6 +103,7 @@ fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
 
     Ok(items)
 }
+
 fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
     let response = get(url)?.text()?;
     let feed = atom_syndication::Feed::read_from(response.as_bytes())?;
@@ -121,10 +123,21 @@ fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
                 summary: entry.summary().map(|summary| summary.to_string()),
                 id: Some(entry.id().to_string()),
                 updated: Some(entry.updated().to_string()),
-                author: entry.authors().first().map(|person| person.name().to_string()),
-                category: entry.categories().first().map(|category| category.term().to_string()),
-                content: entry.content().map(|content| content.value().unwrap_or_default().to_string()),
-                contributor: entry.contributors().first().map(|person| person.name().to_string()),
+                author: entry
+                    .authors()
+                    .first()
+                    .map(|person| person.name().to_string()),
+                category: entry
+                    .categories()
+                    .first()
+                    .map(|category| category.term().to_string()),
+                content: entry
+                    .content()
+                    .map(|content| content.value().unwrap_or_default().to_string()),
+                contributor: entry
+                    .contributors()
+                    .first()
+                    .map(|person| person.name().to_string()),
                 pub_date: entry.published.map(|pub_date| pub_date.to_string()),
                 rights: entry.rights().map(|rights| rights.to_string()),
             }))

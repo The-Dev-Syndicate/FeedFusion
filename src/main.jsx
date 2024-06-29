@@ -1,18 +1,20 @@
+// App.js (or your main entry point)
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
-import './App.css' // TODO: When a css framework is picked we can add that import here
+import './App.css'; // Add your CSS imports here
 import About from './pages/About';
 import Article from './components/general/Article';
-import Layout from './components/PageLayouts/Base'; // If you look at BaseLayout you will see we default export Base so we can just import under any name we want
+import Layout from './components/PageLayouts/Base';
 import NotFound from './pages/NotFound';
 import { FeedProvider } from './components/contexts/FeedProvider';
+import { SelectedFeedProvider } from './components/contexts/SelectedFeedContext'; // Correct import for SelectedFeedProvider
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <Layout />,  // Use Layout component here
+    element: <Layout />,
     children: [
       {
         path: '/',
@@ -36,8 +38,12 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <FeedProvider>
-    <React.StrictMode>
-      <RouterProvider router={router} />
-    </React.StrictMode>
+    <SelectedFeedProvider> {/* Wrap your SelectedFeedProvider here */}
+      <React.StrictMode>
+        <RouterProvider router={router} />
+      </React.StrictMode>
+    </SelectedFeedProvider>
   </FeedProvider>
 );
+
+export default App;
