@@ -9,7 +9,7 @@ export default function Article() {
     const { title } = useParams();
     const { rssItems } = useContext(RssItemsContext);
     console.log('Article Index:', title); // Debug log
-    const article = rssItems.find(item => (item.Rss && item.Rss.title === title) || (item.Atom && item.Atom.title === title));
+    const article = rssItems.find(item => (item.Rss && item.Rss.hash === title) || (item.Atom && item.Atom.title === title));
 
     if (!article) {
         return <div>Article not found looking for <strong>{title}</strong></div>;
@@ -53,6 +53,7 @@ export default function Article() {
             <p>Entry by <b>{article.Rss ? article.Rss.author : article.Atom.author}</b> on {article.Rss ? article.Rss.pub_date : article.Atom.pub_date}</p>
             <p>From {article.Rss ? article.Rss.source : article.Atom.id}</p>
             <p>Conrtibuters [{article.Rss ? article.Rss.contributor : article.Atom.contributor}]</p>
+            <p>Hash: {article.Rss ? article.Rss.hash : article.Atom.hash}</p>
             {/* <ul>
                  <li>link: {article.Rss ? article.Rss.link : article.Atom.link}</li>
                 <li>desc: {article.Rss ? article.Rss.description : article.Atom.summary}</li>

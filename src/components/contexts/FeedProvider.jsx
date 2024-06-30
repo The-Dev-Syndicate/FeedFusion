@@ -13,10 +13,11 @@ export const FeedProvider = ({ children }) => {
     const unlistenRss = listen('new-rss-items', (event) => {
       const newItems = event.payload.filter(newItem => {
         // Create the special key for the new item
-        const newItemKey = `${newItem.title}-${newItem.author}-${newItem.pub_date}`;
+        const newItemKey = `${newItem.title}-${newItem.author}-${newItem.pub_date}-${newItem.hash}`;
+
         // Check if an item with the same key already exists in rssItems
         const exists = rssItems.some(item => {
-          const itemKey = `${item.title}-${item.author}-${item.pub_date}`;
+          const itemKey = `${item.title}-${item.author}-${item.pub_date}-${newItem.hash}`;
           return itemKey === newItemKey;
         });
         // Only add the new item if it doesn't already exist
