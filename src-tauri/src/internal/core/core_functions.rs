@@ -1,78 +1,31 @@
-// These functions are the supporting core of all API's
 use url::Url;
 
-use crate::internal::dbo::article::Article;
-use crate::internal::feed_config::{Feed, FEED_CONFIGURATION};
+use crate::internal;
+use crate::internal::dbo::{article::Article, feed::Feed};
 
 #[derive(Debug)]
 pub enum FeedError {
     InvalidUrl,
 }
 
-
 pub fn greet(name: &str) -> String {
     format!("Hello, {}!", name)
 }
 
-pub fn get_articles() -> Vec<Article> {
-    // TODO: This function can actually be removed in favor of feed.rs push flow
-    // Return two hardcoded fake articles for now
-    vec![
-        Article::new(
-            "First Article",
-            "This is the description of the first article.",
-            "John Doe",
-            "2024-05-30T12:00:00",
-        ),
-        Article::new(
-            "Second Article",
-            "This is the description of the second article.",
-            "Jane Smith",
-            "2024-05-31T09:30:00",
-        ),
-    ]
-}
-
 pub fn load_feeds() -> Vec<Feed> {
-    // TODO: This will come from in memory DB eventually
-    let f1: Feed = Feed::new(
-        "https://feed2.is.fake".to_string(),
-        "fake".to_string(),
-        Some("Feed 1".to_string()),
-        5,
-    );
-    let f2: Feed = Feed::new(
-        "https://feed1.is.fake".to_string(),
-        "fake".to_string(),
-        Some("Feed 2".to_string()),
-        5,
-    );
-    let f3: Feed = Feed::new(
-        "https://feed3.is.fake".to_string(),
-        "fake".to_string(),
-        None,
-        5,
-    );
+    let feeds_db = internal::sqlite_db::get_feeds_db().expect("Issue pulling Feeds from DB for FE");
 
-    let mut feeds_mutex = FEED_CONFIGURATION.lock().unwrap();
-    feeds_mutex.add_feed(f1);
-    feeds_mutex.add_feed(f2);
-    feeds_mutex.add_feed(f3);
-    let feeds = feeds_mutex.feeds.iter().cloned().collect();
-    // No need to drop the mutex as it will be automatically released when it goes out of scope
-    feeds
+    return feeds_db
 }
 
-pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: u8) -> Result<(), String> {
+pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: i32) -> Result<(), String> {
     match validate_and_correct_url(&feed_url) {
         Ok(_) => {
-            println!("Eventually we will build with {} - {}", feed_alias, poll_timer); // TODO: 
-            // let new_feed = Feed {
-            //     category: "null_for_now".to_string(),
-            //     url: valid_url,
-            //     alias: Some(feed_alias),
-            //     poll_timer,
-            // };
+            println!("Eventually we will build with {} - {}", feed_alias, poll_timer);
+
+            // TODO match -> RSS function, Atom function
+            internal::sqlite_db::put_rss_feed_db(feed_url, poll_timer, feed_alias).expect("Error adding new feed");
+
             Ok(())
         }
         Err(FeedError::InvalidUrl) => Err("Invalid URL".to_string()),

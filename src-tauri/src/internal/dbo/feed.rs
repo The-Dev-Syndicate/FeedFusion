@@ -1,24 +1,25 @@
 use reqwest::blocking::get;
 use serde::Serialize;
-use std::sync::mpsc::channel;
 use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 use tauri::{AppHandle, Runtime};
 
-#[derive(Serialize)]
-pub enum FeedItem {
+use crate::internal;
+
+#[derive(Serialize, Debug)] // Debug for printing to console
+pub enum FeedItem{
     Rss(RssEntry),
     Atom(AtomEntry),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Serialize)] // Debug for printing to console
 pub enum FeedType {
     RSS,
     ATOM,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)] // Debug for printing to console
 pub struct RssEntry {
     // Required fields
     pub title: String,
@@ -34,7 +35,7 @@ pub struct RssEntry {
 }
 
 // Struct for Atom item
-#[derive(Serialize)]
+#[derive(Serialize, Debug)] // Debug for printing to console
 pub struct AtomEntry {
     // Required fields
     pub title: String,
@@ -51,24 +52,42 @@ pub struct AtomEntry {
     pub rights: Option<String>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Serialize)] // Debug for printing to console
 pub struct Feed {
     pub url: String,
     pub feed_type: FeedType,
-    pub poll_interval: Duration,
+    pub poll_interval: i32,
+    pub alias: Option<String>,
 }
 
-fn fetch_feed(
-    url: &str,
-    feed_type: &FeedType,
-) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
-    match feed_type {
-        FeedType::RSS => fetch_rss(url),
-        FeedType::ATOM => fetch_atom(url),
+impl Feed {
+    pub fn new(feed_url: String, feed_alias: Option<String>, poll_interval: i32, feed_type: FeedType) -> Self { // changed to handle values in seconds
+        Self {
+            url: feed_url,
+            alias: feed_alias,
+            poll_interval: poll_interval,
+            feed_type
+        }
     }
 }
+
+fn fetch_feed(url: &str, feed_type: &FeedType) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
+    let new_feed_item = match feed_type {
+        FeedType::RSS => fetch_rss(url).expect("Error fetching RSS feed item"),
+        FeedType::ATOM => fetch_atom(url).expect("Error fetching Atom feed item")
+    };
+
+    // insert newly fetched item into DB
+    internal::sqlite_db::put_feed_items_db(new_feed_item).expect("Error sending fetched feed to DB");
+
+    Ok(vec![])
+}
+
 fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
+    println!("Attempting to Fetch Feed from URL: {url}");
     let response = get(url)?.text()?;
+    // println!("{:?}", response);
+    
     let channel = rss::Channel::read_from(response.as_bytes())?;
 
     let items: Vec<FeedItem> = channel
@@ -100,7 +119,7 @@ fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
     let response = get(url)?.text()?;
     let feed = atom_syndication::Feed::read_from(response.as_bytes())?;
 
-    let items: Vec<FeedItem> = feed
+    let mut items: Vec<FeedItem> = feed
         .entries()
         .iter()
         .filter_map(|entry| {
@@ -135,6 +154,7 @@ fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
             }))
         })
         .collect();
+    
     Ok(items)
 }
 
@@ -158,16 +178,23 @@ pub fn start_feed_fetcher<R: Runtime>(app: AppHandle<R>, feeds: Vec<Feed>) {
                     .unwrap();
                 eprintln!("Error fetching feed {}: {}", feed_clone.url, e);
             }
-            thread::sleep(feed_clone.poll_interval);
+            thread::sleep(Duration::from_secs(feed_clone.poll_interval as u64));
         });
     }
 }
 
-fn fetch_and_emit_feed<R: Runtime>(
+fn fetch_and_emit_feed<R: Runtime>( // This just becomes fetch, no emit
     app: &AppHandle<R>,
     feed: &Feed,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let items = fetch_feed(&feed.url, &feed.feed_type)?;
-    app.emit_all("new-rss-items", &items)?;
+    // let items = fetch_feed(&feed.url, &feed.feed_type)?; // To be deleted
+    let _x = fetch_feed(&feed.url, &feed.feed_type); // THIS IS ERRORING on RSS item fetch, will send fetched items to DB
+    let items = internal::sqlite_db::get_feed_items_db(); // pull items from DB, not directly from fetch
+    app.emit_all("new-rss-items", &items)?; // NO EMIT, that is done elsewhere, direct from DB
+
     Ok(())
 }
+
+// There should be another thread
+// Bulk update (not little constant bombardments to FE)
+// FE listener, Every 30 sec render everything in the DB that is new

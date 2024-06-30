@@ -1,8 +1,8 @@
-use std::time::Duration;
 use tauri::Manager;
 use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
 
-use crate::internal::dbo::feed::FeedType;
+use crate::internal;
+// use crate::internal::sqlite_db;
 
 pub fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let splashscreen_window = app.get_window("splashscreen").unwrap();
@@ -10,12 +10,13 @@ pub fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>>
 
     // we perform the initialization code on a new task so the app doesn't freeze
     tauri::async_runtime::spawn(initialize_app(splashscreen_window, main_window));
+    // TODO how to gracefully close DB connetions when app closes
+    // TODO tauri::async_runtime::spawn(initialize_db()); // insize intialize DB will be while look that looks for new items every 5 min, etc. // THis spawns thread
 
     let app_handle = app.handle();
     println!("Setting up the app...");
 
-    // TODO: this will come from DB on startup not from requests
-    let feeds = define_feeds();
+    let feeds = internal::sqlite_db::get_feeds_db().expect("Error grabbing Feeds for BE");
     crate::internal::dbo::feed::start_feed_fetcher(app_handle, feeds);
 
     Ok(())
@@ -31,21 +32,14 @@ async fn initialize_app(splashscreen_window: tauri::Window, main_window: tauri::
     main_window.show().unwrap();
 }
 
-fn define_feeds() -> Vec<crate::internal::dbo::feed::Feed> {
-    vec![
-        crate::internal::dbo::feed::Feed {
-            url: "https://mastodon.social/@lunar_vagabond.rss".to_string(),
-            feed_type: FeedType::RSS,
-            poll_interval: Duration::from_secs(30),
-        },
-        crate::internal::dbo::feed::Feed {
-            url: "https://run.mocky.io/v3/d3d616ed-4780-41f9-915f-bce277ae0afe".to_string(), // this url may need to be regenerated every so often
-            feed_type: FeedType::ATOM,
-            poll_interval: Duration::from_secs(60 * 60 * 12),
-        },
-        // Add more feeds as needed
-    ]
-}
+// TODO
+// async fn initialize_db() {
+//     // While forever
+//     // pull from DB
+//     // check for duplicates
+//     // emit to FE
+//     std::thread::sleep(std::time::Duration::from_secs(5)); // FIXME: This is arbitrary time to wait for now but we can do any heavy lifting for DB stuff here
+// }
 
 pub fn handle_menu_event(event: tauri::WindowMenuEvent) {
     match event.menu_item_id() {

@@ -8,6 +8,12 @@ use internal::app_initialization::tauri_init::{
 
 fn main() {
     let menu = generate_menu();
+    
+    // create sqliteDB -- including tables, generate fake data
+    // TODO only do this once in install of app
+    internal::sqlite_db::create_db();
+    internal::sqlite_db::create_fake_data();
+
     tauri::Builder::default()
         .setup(setup_app)
         .menu(menu)
@@ -16,7 +22,6 @@ fn main() {
             internal::api::endpoints::greet,
             internal::api::endpoints::add_feed,
             internal::api::endpoints::load_feeds,
-            internal::api::endpoints::get_articles
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
