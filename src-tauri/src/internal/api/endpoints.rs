@@ -1,11 +1,8 @@
 use tauri::command;
-use crate::internal::{dbo::article::Article, core::core_functions, feed_config::Feed};
+use crate::internal::{core::core_functions, dbo::feed::Feed};
 
 #[command] // Tauri decorator
 pub fn greet(name: &str) -> String { core_functions::greet(name) }
-
-#[command] // Tauri decorator
-pub fn get_articles() -> Vec<Article> { core_functions::get_articles() }
 
 #[command] // Tauri decorator
 pub fn load_feeds() -> Vec<Feed> { core_functions::load_feeds() }

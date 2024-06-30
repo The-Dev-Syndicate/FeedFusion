@@ -1,13 +1,11 @@
 use reqwest::blocking::get;
 use serde::Serialize;
-use std::sync::mpsc::channel;
 use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 use tauri::{AppHandle, Runtime};
 
 use crate::internal;
-use crate::internal::sqlite_db::{self, put_atom_entry_db, put_rss_entry_db};
 
 #[derive(Serialize, Debug)] // Debug for printing to console
 pub enum FeedItem{
@@ -15,7 +13,7 @@ pub enum FeedItem{
     Atom(AtomEntry),
 }
 
-#[derive(Clone, Debug)] // Debug for printing to console
+#[derive(Clone, Debug, Serialize)] // Debug for printing to console
 pub enum FeedType {
     RSS,
     ATOM,
@@ -54,14 +52,26 @@ pub struct AtomEntry {
     pub rights: Option<String>,
 }
 
-#[derive(Clone, Debug)] // Debug for printing to console
+#[derive(Clone, Debug, Serialize)] // Debug for printing to console
 pub struct Feed {
     pub url: String,
     pub feed_type: FeedType,
-    pub poll_interval: Duration,
+    pub poll_interval: i32,
+    pub alias: Option<String>,
 }
 
-fn fetch_feed(url: &str, feed_type: &FeedType) {
+impl Feed {
+    pub fn new(feed_url: String, feed_alias: Option<String>, poll_interval: i32, feed_type: FeedType) -> Self { // changed to handle values in seconds
+        Self {
+            url: feed_url,
+            alias: feed_alias,
+            poll_interval: poll_interval,
+            feed_type
+        }
+    }
+}
+
+fn fetch_feed(url: &str, feed_type: &FeedType) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
     let new_feed_item = match feed_type {
         FeedType::RSS => fetch_rss(url).expect("Error fetching RSS feed item"),
         FeedType::ATOM => fetch_atom(url).expect("Error fetching Atom feed item")
@@ -69,13 +79,15 @@ fn fetch_feed(url: &str, feed_type: &FeedType) {
 
     // insert newly fetched item into DB
     internal::sqlite_db::put_feed_items_db(new_feed_item).expect("Error sending fetched feed to DB");
+
+    Ok(vec![])
 }
 
 fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
     println!("Attempting to Fetch Feed from URL: {url}");
-    let response = get(url)?.text()?; // for DB, go to DB not url
-    println!("Response {response}");
-
+    let response = get(url)?.text()?;
+    // println!("{:?}", response);
+    
     let channel = rss::Channel::read_from(response.as_bytes())?;
 
     let items: Vec<FeedItem> = channel
@@ -87,7 +99,6 @@ fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
                 title = Some(channel.title().to_string());
             }
             Some(FeedItem::Rss(RssEntry {
-                // title: title.map(|s| s.to_string()),//unwrap(),
                 title: title.unwrap(),
                 link: item.link().map(|s| s.to_string()),
                 description: item.description().map(|s| s.to_string()),
@@ -144,11 +155,6 @@ fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
         })
         .collect();
     
-    //###################################################################//
-    // let items = sqlite_db::get_feed_items_db();
-    // items.append(&mut items_db); // put em together
-    //###################################################################//
-    
     Ok(items)
 }
 
@@ -172,7 +178,7 @@ pub fn start_feed_fetcher<R: Runtime>(app: AppHandle<R>, feeds: Vec<Feed>) {
                     .unwrap();
                 eprintln!("Error fetching feed {}: {}", feed_clone.url, e);
             }
-            thread::sleep(feed_clone.poll_interval);
+            thread::sleep(Duration::from_secs(feed_clone.poll_interval as u64));
         });
     }
 }
@@ -182,7 +188,7 @@ fn fetch_and_emit_feed<R: Runtime>( // This just becomes fetch, no emit
     feed: &Feed,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // let items = fetch_feed(&feed.url, &feed.feed_type)?; // To be deleted
-    // fetch_feed(&feed.url, &feed.feed_type); // THIS IS ERRORING on RSS item fetch, will send fetched items to DB
+    let _x = fetch_feed(&feed.url, &feed.feed_type); // THIS IS ERRORING on RSS item fetch, will send fetched items to DB
     let items = internal::sqlite_db::get_feed_items_db(); // pull items from DB, not directly from fetch
     app.emit_all("new-rss-items", &items)?; // NO EMIT, that is done elsewhere, direct from DB
 

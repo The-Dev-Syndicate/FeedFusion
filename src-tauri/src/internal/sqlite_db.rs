@@ -1,9 +1,5 @@
-use std::time::Duration;
 use rusqlite::{params, Connection, Result};
 use crate::internal::dbo::feed::{Feed, FeedType, FeedItem, AtomEntry, RssEntry};
-use crate::internal::feed_config::Feed as FeedFE; // for displaying on FE
-
-// use tauri::{AppHandle, Runtime, Manager};
 
 //-----------//
 // Functions //
@@ -32,7 +28,6 @@ pub fn create_rss_feed_table() -> Result<Connection> {
         feed_id INTEGER PRIMARY KEY AUTOINCREMENT,
         url TEXT NOT NULL,
         poll_interval INTEGER NOT NULL,
-        category TEXT,
         alias TEXT
         )",
         [],
@@ -53,7 +48,6 @@ pub fn create_atom_feed_table() -> Result<Connection> {
         feed_id INTEGER PRIMARY KEY AUTOINCREMENT,
         url TEXT NOT NULL,
         poll_interval INTEGER NOT NULL,
-        category TEXT,
         alias TEXT
         )",
         [],
@@ -65,8 +59,6 @@ pub fn create_atom_feed_table() -> Result<Connection> {
 //------------------------------------------------------------------------------------------
 
 pub fn create_rss_entry_table() -> Result<Connection> {
-    //TODO: make this persistant
-    // let conn = Connection::open_in_memory()?;
     
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
@@ -95,8 +87,6 @@ pub fn create_rss_entry_table() -> Result<Connection> {
 //------------------------------------------------------------------------------------------
 
 pub fn create_atom_entry_table() -> Result<Connection> {
-    //TODO: make this persistant
-    // let conn = Connection::open_in_memory()?;
     
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
@@ -148,44 +138,44 @@ pub fn create_fake_feeds() -> Result<()> {
     let rss_feed = Feed {
         url: "https://mastodon.social/@lunar_vagabond.rss".to_string(),
         feed_type: FeedType::RSS,
-        poll_interval: Duration::from_secs(1 * 1 * 10), // every 10 sec,
+        poll_interval: 10, // every 10 sec,
+        alias: Some("Lunar Vagabound".to_string())
     };
     
-    let rss_feed_vec = vec![rss_feed]; // not necesary, but my brain wanted to do it
+    let rss_feed_vec = vec![rss_feed];
 
     // TODO, add ToSql trait to interpret feed fields as what sql expects, hard coding for now
     for f in rss_feed_vec { // PK auto incremented in SQLite/rusqulite
-        conn.execute( // leave "alias" null
-            "INSERT OR IGNORE INTO RSSFeeds
-                (feed_id, url, poll_interval, category, alias)
-            VALUES
-                (?1, ?2, ?3, ?4, ?5)
-                ",
-                // params![1, f.url, f.feed_type, f.poll_interval, "test_category", None] // The trait bound 'FeedType: ToSql' is not satisfied 
-                params![1, f.url, 10, "test_category", "Lunar Vagabond"]
-        )?;
-    }
-    
-    // TODO: Add atom Feed
-    let atom_feed = Feed {
-        url: "https://run.mocky.io/v3/d3d616ed-4780-41f9-915f-bce277ae0afe".to_string(), // this url may need to be regenerated every so often
-        feed_type: FeedType::ATOM,
-        poll_interval: Duration::from_secs(1* 1* 10), // every 10 sec
-    };
-    
-    let atom_feed_vec = vec![atom_feed]; // not necesary, but my brain wanted to do it
-
-    // TODO add ToSql trait to interpret feed fields as what sql expects, hard coding for now
-    for f in atom_feed_vec { 
         conn.execute(
-            "INSERT OR IGNORE INTO AtomFeeds
-                (feed_id, url, poll_interval, category, alias)
+            "INSERT OR IGNORE INTO RSSFeeds
+                (feed_id, url, poll_interval, alias)
             VALUES
-                (?1, ?2, ?3, ?4, ?5)
-                ", 
-                params![1, f.url, 10, "test_category", "Mocky"]
+                (?1, ?2, ?3, ?4)
+                ",
+                params![1, f.url, f.poll_interval, f.alias]
         )?;
     }
+    
+    // // TODO: Add atom Feed
+    // let atom_feed = Feed {
+    //     url: "https://run.mocky.io/v3/d3d616ed-4780-41f9-915f-bce277ae0afe".to_string(), // this url may need to be regenerated every so often
+    //     feed_type: FeedType::ATOM,
+    //     poll_interval: Duration::from_secs(1* 1* 10), // every 10 sec
+    // };
+    
+    // let atom_feed_vec = vec![atom_feed]; // not necesary, but my brain wanted to do it
+
+    // // TODO add ToSql trait to interpret feed fields as what sql expects, hard coding for now
+    // for f in atom_feed_vec { 
+    //     conn.execute(
+    //         "INSERT OR IGNORE INTO AtomFeeds
+    //             (feed_id, url, poll_interval, alias)
+    //         VALUES
+    //             (?1, ?2, ?3, ?4)
+    //             ", 
+    //             params![1, f.url, 10, "Mocky"]
+    //     )?;
+    // }
 
     Ok(())
 }
@@ -242,18 +232,18 @@ pub fn create_fake_feed_items() -> Result<()> {
 //-------------//
 
 // TO DO make feed_category, and feed_alias Option<> to accept None
-pub fn put_rss_feed_db(feed_url: String, poll_timer: i32, feed_category: String, feed_alias: String) -> Result<()> {
+pub fn put_rss_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) -> Result<()> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
     //print!("{:?}\n", conn.is_autocommit());
-    
+
     conn.execute(
         "INSERT OR IGNORE INTO RSSFeeds
-            (url, poll_interval, category, alias)
+            (url, poll_interval, alias)
         VALUES
-            (?1, ?2, ?3, ?4)
+            (?1, ?2, ?3)
         ",
-        params![feed_url, poll_timer, feed_category, feed_alias], // send "test_category" for feed_category
+        params![feed_url, poll_timer, feed_alias], // send "test_category" for feed_category
     )?;
 
     println!("RSS Feed uploaded, but not the correct way to test this, use match, or something");
@@ -263,18 +253,18 @@ pub fn put_rss_feed_db(feed_url: String, poll_timer: i32, feed_category: String,
 
 //------------------------------------------------------------------------------------------
 
-pub fn put_atom_feed_db(feed_url: String, poll_timer: i32, feed_category: String, feed_alias: String) -> Result<()> {
+pub fn put_atom_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) -> Result<()> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
     //print!("{:?}\n", conn.is_autocommit());
 
     conn.execute(
         "INSERT OR IGNORE INTO AtomFeeds
-            (url, poll_interval, category, alias)
+            (url, poll_interval, alias)
         VALUES
-            (?1, ?2, ?3, ?4)
+            (?1, ?2, ?3)
         ",
-        params![feed_url, poll_timer, feed_category, feed_alias],
+        params![feed_url, poll_timer, feed_alias],
     )?;
 
     println!("Atom Feed uploaded, but not the correct way to test this, use match, or something");
@@ -284,11 +274,13 @@ pub fn put_atom_feed_db(feed_url: String, poll_timer: i32, feed_category: String
 
 //------------------------------------------------------------------------------------------
 
+// let _e = 
+
 pub fn put_feed_items_db(items: Vec<FeedItem>) -> Result<()> {
     for item in items {
         let _e = match item {
-            FeedItem::Rss(e) => put_rss_entry_db(e),
-            FeedItem::Atom(e) => put_atom_entry_db(e),
+            FeedItem::Rss(e) => {put_rss_entry_db(e).expect("Thing1");},
+            FeedItem::Atom(e) => {put_atom_entry_db(e).expect("Thing2");},
         };
     }
 
@@ -321,11 +313,13 @@ pub fn put_rss_entry_db(e: RssEntry) -> Result<()> {
     let conn = Connection::open(path)?;
     //print!("{:?}\n", conn.is_autocommit());
 
+    println!("HERE");
+
     conn.execute(
         "INSERT OR IGNORE INTO RSSEntry
             (title, link, description, pub_date, author, category, comments, enclosure, guid)
         VALUES
-            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
             ",
             params![e.title, e.link, e.description, e.pub_date, e.author,
                     e.category, e.comments, e.enclosure, e.guid]
@@ -335,11 +329,11 @@ pub fn put_rss_entry_db(e: RssEntry) -> Result<()> {
 }
 //------------------------------------------------------------------------------------------
 
-pub fn get_feeds_for_front_end_db() -> Result<Vec<FeedFE>> {
-    let mut rss_feeds: Vec<FeedFE> = get_fe_rss_feeds_db().expect("Error getting FE RSS feeds from DB");
-    let mut atom_feeds: Vec<FeedFE> = get_fe_atom_feeds_db().expect("Error getting FE Atom feeds from DB");
+pub fn get_feeds_db() -> Result<Vec<Feed>> {
+    let mut rss_feeds: Vec<Feed> = get_rss_feeds_db().expect("Error getting FE RSS feeds from DB");
+    let mut atom_feeds: Vec<Feed> = get_atom_feeds_db().expect("Error getting FE Atom feeds from DB");
 
-    let mut full_feeds: Vec<FeedFE> = Vec::new();
+    let mut full_feeds: Vec<Feed> = Vec::new();
     full_feeds.append(&mut rss_feeds); // put em together
     full_feeds.append(&mut atom_feeds); // put em together
 
@@ -348,7 +342,7 @@ pub fn get_feeds_for_front_end_db() -> Result<Vec<FeedFE>> {
 
 //------------------------------------------------------------------------------------------
 
-pub fn get_fe_rss_feeds_db() -> Result<Vec<FeedFE>> {
+pub fn get_rss_feeds_db() -> Result<Vec<Feed>> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
     //print!("{:?}\n", conn.is_autocommit());
@@ -356,26 +350,24 @@ pub fn get_fe_rss_feeds_db() -> Result<Vec<FeedFE>> {
     // TODO: read in select statement, hard code for now
     let mut stmt = conn.prepare(
         "
-        SELECT url, alias, category, poll_interval
+        SELECT url, alias, poll_interval
         FROM RSSFeeds
         "
     )?;
 
     // TODO: Control logic that this is a valid SELECT statement
     let feed_iter = stmt.query_map([], |row| {
-        // let interval: u8 = row.get(3)?;
-        Ok(FeedFE {
+        Ok(Feed {
             url: row.get(0)?,
             alias: row.get(1)?,
-            category: row.get(2)?,
-            poll_timer: row.get(3)?,
+            poll_interval: row.get(2)?,
+            feed_type: FeedType::RSS
         })
     })?;
 
-    //let mut db_atom_entry: Vec<AtomEntry> = vec![];
-    let mut db_rss_feed: Vec<FeedFE> = vec![];
+    let mut db_rss_feed: Vec<Feed> = vec![];
 
-    for entry in feed_iter { // this is innefficient, can I do something directily from article_iter?
+    for entry in feed_iter { // FIXME: this is innefficient, can I do something directily from article_iter?
         let e = match entry {
             Ok(entry) => entry,
             Err(_) => {
@@ -392,7 +384,7 @@ pub fn get_fe_rss_feeds_db() -> Result<Vec<FeedFE>> {
 
 //------------------------------------------------------------------------------------------
 
-pub fn get_fe_atom_feeds_db() -> Result<Vec<FeedFE>> {
+pub fn get_atom_feeds_db() -> Result<Vec<Feed>> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
     //print!("{:?}\n", conn.is_autocommit());
@@ -400,26 +392,24 @@ pub fn get_fe_atom_feeds_db() -> Result<Vec<FeedFE>> {
     // TODO: read in select statement, hard code for now
     let mut stmt = conn.prepare(
         "
-        SELECT url, alias, category, poll_interval
+        SELECT url, alias, poll_interval
         FROM AtomFeeds
         "
     )?;
 
     // TODO: Control logic that this is a valid SELECT statement
     let feed_iter = stmt.query_map([], |row| {
-        // let interval: u8 = row.get(3)?;
-        Ok(FeedFE {
+        Ok(Feed {
             url: row.get(0)?,
             alias: row.get(1)?,
-            category: row.get(2)?,
-            poll_timer: row.get(3)?,
+            poll_interval: row.get(2)?,
+            feed_type: FeedType::ATOM
         })
     })?;
 
-    //let mut db_atom_entry: Vec<AtomEntry> = vec![];
-    let mut db_atom_feed: Vec<FeedFE> = vec![];
+    let mut db_atom_feed: Vec<Feed> = vec![];
 
-    for entry in feed_iter { // this is innefficient, can I do something directily from article_iter?
+    for entry in feed_iter { // FIXME this is innefficient, can I do something directily from article_iter?
         let e = match entry {
             Ok(entry) => entry,
             Err(_) => {
@@ -432,100 +422,6 @@ pub fn get_fe_atom_feeds_db() -> Result<Vec<FeedFE>> {
     }
 
     Ok(db_atom_feed)
-}
-
-//------------------------------------------------------------------------------------------
-
-pub fn get_feeds_for_back_end_db() -> Result<Vec<Feed>> {
-    let mut rss_feeds: Vec<Feed> = get_be_rss_feeds_db().expect("Error getting FE RSS feeds from DB");
-    let mut atom_feeds: Vec<Feed> = get_be_atom_feeds_db().expect("Error getting FE Atom feeds from DB");
-
-    let mut full_feeds: Vec<Feed> = Vec::new();
-    full_feeds.append(&mut rss_feeds); // put em together
-    full_feeds.append(&mut atom_feeds); // put em together
-
-    Ok(full_feeds)
-}
-
-// TODO add in last_pulled_time field
-pub fn get_be_rss_feeds_db() -> Result<Vec<Feed>> {
-    let path = "./local_db.db3";
-    let conn = Connection::open(path)?;
-    //print!("{:?}\n", conn.is_autocommit());
-
-    // TODO: read in select statement, hard code for now
-    // TODO: Control logic that this is a valid SELECT statement
-    let mut stmt = conn.prepare(
-        "
-        SELECT url, poll_interval
-        FROM RSSFeeds
-        "
-    )?;
-
-    let feed_iter = stmt.query_map([], |row| {
-        Ok(Feed {
-            url: row.get(0)?,
-            feed_type: FeedType::RSS,
-            poll_interval: Duration::from_secs(row.get(1)?),
-        })
-    })?;
-
-    let mut db_rss_feed: Vec<Feed> = vec![];
-
-    for entry in feed_iter { // this is innefficient, can I do something directily from article_iter?
-        let e = match entry {
-            Ok(entry) => entry,
-            Err(_) => {
-                println!("Error converting RSSFeed query to vector");
-                continue;
-            }
-        };
-        db_rss_feed.push(e);
-    }
-
-    Ok(db_rss_feed)
-
-}
-
-//------------------------------------------------------------------------------------------
-
-pub fn get_be_atom_feeds_db() -> Result<Vec<Feed>> {
-    let path = "./local_db.db3";
-    let conn = Connection::open(path)?;
-    //print!("{:?}\n", conn.is_autocommit());
-
-    // TODO: read in select statement, hard code for now
-    // TODO: Control logic that this is a valid SELECT statement
-    let mut stmt = conn.prepare(
-        "
-        SELECT url, poll_interval
-        FROM AtomFeeds
-        "
-    )?;
-
-    let feed_iter = stmt.query_map([], |row| {
-        Ok(Feed {
-            url: row.get(0)?,
-            feed_type: FeedType::RSS,
-            poll_interval: Duration::from_secs(row.get(1)?),
-        })
-    })?;
-
-    let mut db_atom_feed: Vec<Feed> = vec![];
-
-    for entry in feed_iter { // this is innefficient, can I do something directily from article_iter?
-        let e = match entry {
-            Ok(entry) => entry,
-            Err(_) => {
-                println!("Error converting RSSFeed query to vector");
-                continue;
-            }
-        };
-        db_atom_feed.push(e);
-    }
-
-    Ok(db_atom_feed)
-
 }
 
 //------------------------------------------------------------------------------------------
@@ -546,7 +442,6 @@ fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
     // TODO: Control logic that this is a valid SELECT statement
     let atom_iter = stmt.query_map([], |row| {
         Ok(AtomEntry {
-            // id: row.get(0)?, // need way of having ID be an entry field, but auto incr when inserted
             title: row.get(0)?,
             link: row.get(1)?,
             summary: row.get(2)?,
@@ -563,12 +458,11 @@ fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
 
     let mut db_atom_entry: Vec<FeedItem> = vec![];
 
-    for entry in atom_iter { // this is innefficient, can I do something directily from article_iter?
+    for entry in atom_iter { // FIXME this is innefficient, can I do something directily from article_iter?
         let e = match entry {
             Ok(entry) => entry,
             Err(_) => {
                 println!("Error converting AtomEntry result to vector");
-                // println!("AtomEntry: {:?}", entry.unwrap());
                 continue;
             }
         };
@@ -596,7 +490,6 @@ fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
     // TODO: Control logic that this is a valid SELECT statement
     let rss_iter = stmt.query_map([], |row| {
         Ok(RssEntry {
-            // id: row.get(0)?, // need way of having ID be an Article field, but auto incr when inserted
             title: row.get(0)?,
             link: row.get(1)?,
             description: row.get(2)?,
@@ -616,7 +509,6 @@ fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
             Ok(entry) => entry,
             Err(_) => {
                 println!("Error converting AtomEntry result to vector");
-                // println!("AtomEntry: {:?}", entry.unwrap());
                 continue;
             }
         };
@@ -631,11 +523,10 @@ fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
 pub fn get_feed_items_db() -> Vec<FeedItem> {
     let mut atom_feed: Vec<FeedItem> = get_atom_entry_db().expect("Panic query fake AtomEntry");
     let mut rss_feed: Vec<FeedItem> = get_rss_entry_db().expect("Panic query fake RSSEntry");
-    // let mut rss_feed: Vec<FeedItem> = Vec::new(); // hard code as empty for testing
 
     let mut full_feeds: Vec<FeedItem> = Vec::new();
-    full_feeds.append(&mut atom_feed); // put em together
-    full_feeds.append(&mut rss_feed); // put em together
+    full_feeds.append(&mut atom_feed);
+    full_feeds.append(&mut rss_feed);
     
     
     println!("{:?}", full_feeds.len());
