@@ -275,8 +275,6 @@ pub fn put_atom_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) -
 
 //------------------------------------------------------------------------------------------
 
-// let _e =
-
 pub fn put_feed_items_db(items: Vec<FeedItem>) -> Result<()> {
     for item in items {
         let _e = match item {
@@ -457,8 +455,13 @@ fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
 
     // TODO: Control logic that this is a valid SELECT statement
     let atom_iter = stmt.query_map([], |row| {
-        let hash_str: String = row.get(9)?;
-        let hash: i64 = hash_str.parse().map_or(0, |x| x);
+        let hash: i64 = match row.get(9) {
+            Ok(hash) => hash,
+            Err(e) => {
+                eprintln!("Error loading atom hash: {e}");
+                0
+            }
+        };
         Ok(AtomEntry {
             title: row.get(0)?,
             link: row.get(1)?,
@@ -509,8 +512,13 @@ fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
 
     // TODO: Control logic that this is a valid SELECT statement
     let rss_iter = stmt.query_map([], |row| {
-        let hash_str: String = row.get(9)?;
-        let hash: i64 = hash_str.parse().map_or(0, |x| x);
+        let hash: i64 = match row.get(9) {
+            Ok(hash) => hash,
+            Err(e) => {
+                eprintln!("Error Loading Hash: {e}");
+                0
+            }
+        };
         Ok(RssEntry {
             title: row.get(0)?,
             link: row.get(1)?,
@@ -532,7 +540,7 @@ fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
         let e = match entry {
             Ok(entry) => entry,
             Err(_) => {
-                println!("Error converting AtomEntry result to vector");
+                println!("Error converting RssEntry result to vector");
                 continue;
             }
         };
