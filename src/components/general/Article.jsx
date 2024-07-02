@@ -9,7 +9,14 @@ export default function Article() {
     const { title } = useParams();
     const { rssItems } = useContext(RssItemsContext);
     console.log('Article Index:', title); // Debug log
-    const article = rssItems.find(item => (item.Rss && item.Rss.hash === title) || (item.Atom && item.Atom.title === title));
+const article = rssItems.find(item => {
+        const rssHash = item.Rss ? String(item.Rss.hash) : null;
+        const atomTitle = item.Atom ? item.Atom.title : null;
+        
+        console.log('Checking item:', { rssHash, atomTitle });
+
+        return (item.Rss && rssHash === title) || (item.Atom && atomTitle === title);
+    });
 
     if (!article) {
         return <div>Article not found looking for <strong>{title}</strong></div>;
@@ -47,7 +54,7 @@ export default function Article() {
     // TODO: We should probably add className=article-<node> to the hand crafted elements too here but for now its okay
     return (
         <div className='article-container'>
-            <h1>{article.Rss ? article.Rss.title : article.Atom.title} - <small>{article.Rss ? article.Rss.category : article.Atom.category}</small></h1>
+            <h1><small>({article.Rss ? article.Rss.category : article.Atom.category})</small> - {article.Rss ? article.Rss.title : article.Atom.title}</h1>
             <p><small>{article.Rss && article.Rss.link ? article.Rss.link : (article.Atom && article.Atom.link ? article.Atom.link : 'No link available')}</small></p>
             <p><small>{article.Rss && article.Rss.description ? article.Rss.description : (article.Atom && article.Atom.summary ? article.Atom.summary : 'No summary available')}</small></p>
             <p>Entry by <b>{article.Rss ? article.Rss.author : article.Atom.author}</b> on {article.Rss ? article.Rss.pub_date : article.Atom.pub_date}</p>

@@ -1,7 +1,7 @@
 use std::collections::hash_set;
 
 use crate::internal::dbo::feed::{AtomEntry, Feed, FeedItem, FeedType, RssEntry};
-use rusqlite::{params, Connection, Result};
+use rusqlite::{params, Connection, OptionalExtension, Result};
 
 //-----------//
 // Functions //
@@ -314,27 +314,76 @@ pub fn put_atom_entry_db(e: AtomEntry) -> Result<()> {
 pub fn put_rss_entry_db(e: RssEntry) -> Result<()> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    //print!("{:?}\n", conn.is_autocommit());
 
-    conn.execute(
-        "INSERT OR IGNORE INTO RSSEntry
-            (title, link, description, pub_date, author, category, comments, enclosure, guid, hash)
-        VALUES
-            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
-            ",
-        params![
-            e.title,
-            e.link,
-            e.description,
-            e.pub_date,
-            e.author,
-            e.category,
-            e.comments,
-            e.enclosure,
-            e.guid,
-            e.hash
-        ],
+    let mut stmt = conn.prepare(
+        "
+        SELECT hash
+        FROM RSSEntry
+        WHERE link = ?1
+    ",
     )?;
+
+    let existing_hash: Option<i64> = stmt
+        .query_row(params![e.link], |row| row.get(0))
+        .optional()?;
+    match existing_hash {
+        Some(db_hash) => {
+            if existing_hash.unwrap() != e.hash {
+                println!("The hash did not match for: {} - {}", e.hash, db_hash);
+                // Update the existing entry if the hash does not match
+                conn.execute(
+                    "UPDATE RSSEntry
+                    SET description = ?1,
+                        category = ?2,
+                        comments = ?3,
+                        enclosure = ?4,
+                        guid = ?5,
+                        hash = ?6,
+                        title= ?7,
+                        link = ?8,
+                        pub_date = ?9,
+                        author = ?10
+                    WHERE title = ?7
+                      AND link = ?8
+                      AND pub_date = ?9
+                      AND author = ?10",
+                    params![
+                        e.description,
+                        e.category,
+                        e.comments,
+                        e.enclosure,
+                        e.guid,
+                        e.hash,
+                        e.title,
+                        e.link,
+                        e.pub_date,
+                        e.author,
+                    ],
+                )?;
+            }
+        }
+        None => {
+            // Insert a new entry if no match is found
+            conn.execute(
+                "INSERT INTO RSSEntry
+                    (title, link, description, pub_date, author, category, comments, enclosure, guid, hash)
+                VALUES
+                    (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                params![
+                    e.title,
+                    e.link,
+                    e.description,
+                    e.pub_date,
+                    e.author,
+                    e.category,
+                    e.comments,
+                    e.enclosure,
+                    e.guid,
+                    e.hash,
+                ],
+            )?;
+        }
+    }
 
     Ok(())
 }
