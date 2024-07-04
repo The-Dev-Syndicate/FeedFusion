@@ -197,7 +197,7 @@ pub fn create_fake_feed_items() -> Result<()> {
     let fake_atom_entry: Vec<AtomEntry> = vec![AtomEntry::new(
         "Fake First Article".to_string(),
         Some("url.com".to_string()),
-        Some("This is the description of the first article.".to_string()),
+        Some("<h1>This is the description of the first article.</h1>".to_string()),
         Some("1".to_string()),
         Some("Yesterday".to_string()),
         Some("John Doe".to_string()),
@@ -207,6 +207,7 @@ pub fn create_fake_feed_items() -> Result<()> {
         Some("2024-05-30T12:00:00".to_string()),
         None, // rights
     )];
+
     for e in fake_atom_entry {
         // PK auto incremented in SQLite/rusqulite
         conn.execute(
@@ -218,7 +219,6 @@ pub fn create_fake_feed_items() -> Result<()> {
                 params![1, e.title, e.link, e.summary, e.id, e.updated, e.author,
                         e.category, e.content, e.contributor, e.pub_date, e.rights, e.hash]
         )?;
-        // i += 1;
     }
 
     Ok(())
@@ -297,15 +297,70 @@ pub fn put_atom_entry_db(e: AtomEntry) -> Result<()> {
     let conn = Connection::open(path)?;
     //print!("{:?}\n", conn.is_autocommit());
 
-    conn.execute(
-        "INSERT OR IGNORE INTO AtomEntry
-            (title, link, summary, id, updated, author, category, content, contributor, pub_date, rights, hash)
-        VALUES
-            (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
-            ",
-            params![e.title, e.link, e.summary, e.id, e.updated, e.author,
-                    e.category, e.content, e.contributor, e.pub_date, e.rights, e.hash]
+    let mut stmt = conn.prepare(
+        "
+        SELECT hash
+        FROM AtomEntry
+        WHERE link = ?1
+        AND title = ?2
+        AND pub_date = ?3
+    ",
     )?;
+
+    let existing_hash: Option<i64> = stmt
+        .query_row(params![e.link, e.title, e.pub_date], |row| row.get(0))
+        .optional()?;
+
+    match existing_hash {
+        Some(_) => {
+            if existing_hash.unwrap() != e.hash {
+                // Update the existing entry if the hash does not match
+                let _ = conn.execute(
+                    "UPDATE AtomEntry
+                    SET title       = ?1,
+                        link        = ?2,
+                        summary     = ?3,
+                        id          = ?4,
+                        updated     = ?5,
+                        author      = ?6,
+                        category    = ?7,
+                        content     = ?8,
+                        contributor = ?9,
+                        pub_date    = ?10
+                        rights      = ?11
+                        hash        = ?12
+                    WHERE hash      = ?13",
+                    params![
+                        e.title,
+                        e.link,
+                        e.summary,
+                        e.id,
+                        e.updated,
+                        e.author,
+                        e.category,
+                        e.content,
+                        e.contributor,
+                        e.pub_date,
+                        e.rights,
+                        e.hash,
+                        existing_hash
+                    ],
+                );
+            }
+        }
+        None => {
+            // Insert a new entry if no match is found
+            conn.execute(
+                "INSERT OR IGNORE INTO AtomEntry
+                    (title, link, summary, id, updated, author, category, content, contributor, pub_date, rights, hash)
+                VALUES
+                    (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+                    ",
+                    params![e.title, e.link, e.summary, e.id, e.updated, e.author,
+                            e.category, e.content, e.contributor, e.pub_date, e.rights, e.hash]
+            )?;
+        }
+    }
 
     Ok(())
 }
@@ -320,33 +375,32 @@ pub fn put_rss_entry_db(e: RssEntry) -> Result<()> {
         SELECT hash
         FROM RSSEntry
         WHERE link = ?1
+          AND pub_date = ?2 
     ",
     )?;
 
     let existing_hash: Option<i64> = stmt
-        .query_row(params![e.link], |row| row.get(0))
+        .query_row(params![e.link, e.pub_date], |row| row.get(0))
         .optional()?;
+
     match existing_hash {
-        Some(db_hash) => {
+        Some(_) => {
             if existing_hash.unwrap() != e.hash {
-                println!("The hash did not match for: {} - {}", e.hash, db_hash);
                 // Update the existing entry if the hash does not match
-                conn.execute(
+                let _ = conn.execute(
                     "UPDATE RSSEntry
                     SET description = ?1,
-                        category = ?2,
-                        comments = ?3,
-                        enclosure = ?4,
-                        guid = ?5,
-                        hash = ?6,
-                        title= ?7,
-                        link = ?8,
-                        pub_date = ?9,
-                        author = ?10
-                    WHERE title = ?7
-                      AND link = ?8
-                      AND pub_date = ?9
-                      AND author = ?10",
+                        category    = ?2,
+                        comments    = ?3,
+                        enclosure   = ?4,
+                        guid        = ?5,
+                        hash        = ?6,
+                        title       = ?7,
+                        link        = ?8,
+                        pub_date    = ?9,
+                        author      = ?10
+                    WHERE hash      = ?11
+                      ",
                     params![
                         e.description,
                         e.category,
@@ -358,8 +412,9 @@ pub fn put_rss_entry_db(e: RssEntry) -> Result<()> {
                         e.link,
                         e.pub_date,
                         e.author,
+                        existing_hash
                     ],
-                )?;
+                );
             }
         }
         None => {
@@ -504,7 +559,7 @@ fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
 
     // TODO: Control logic that this is a valid SELECT statement
     let atom_iter = stmt.query_map([], |row| {
-        let hash: i64 = match row.get(9) {
+        let hash: i64 = match row.get(11) {
             Ok(hash) => hash,
             Err(e) => {
                 eprintln!("Error loading atom hash: {e}");

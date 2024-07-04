@@ -10,19 +10,10 @@ export const FeedProvider = ({ children }) => {
 
   useEffect(() => {
     const unlistenRss = listen('new-rss-items', (event) => {
-      const newItems = event.payload;
-
-      setRssItems((prevItems) => {
-        // Create a Set of current item hashes for quick lookup
-        const existingHashes = new Set(prevItems.map(item => item.hash));
-
-        // Filter out new items that already exist in the Set
-        const filteredNewItems = newItems.filter(item => !existingHashes.has(item.hash));
-
-        // Return a new array combining previous items and filtered new items
-        return [...prevItems, ...filteredNewItems];
-      });
-    });
+      console.log("Got New Item: ", event.payload)
+      setRssItems(event.payload)
+      return}
+    );
 
     const unlistenError = listen('feed-error', (event) => {
       setErrors((prevErrors) => [...prevErrors, event.payload]);

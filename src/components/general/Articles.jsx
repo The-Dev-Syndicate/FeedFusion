@@ -33,7 +33,7 @@ export default function Articles() {
   return (
     <div className="articles-container">
       {filteredItems.map((article, index) => (
-        <div key={index} onClick={() => handleCardClick(article.Rss ? `${article.Rss.hash}` : article.Atom.title)}>
+        <div key={index} onClick={() => handleCardClick(article.Rss ? `${article.Rss.hash}` : `${article.Atom.hash}`)}>
           <ArticleCard
             title={article.Rss ? article.Rss.title : article.Atom.title}
             date={article.Rss ? article.Rss.pub_date : article.Atom.pub_date}
