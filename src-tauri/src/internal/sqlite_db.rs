@@ -127,7 +127,7 @@ pub fn create_atom_entry_table() -> Result<Connection> {
 
 pub fn create_fake_data() {
     create_fake_feeds().expect("Feed creation error.");
-    create_fake_feed_items().expect("Feed Item creation error.");
+    //create_fake_feed_items().expect("Feed Item creation error.");
 }
 
 //------------------------------------------------------------------------------------------
@@ -145,10 +145,17 @@ pub fn create_fake_feeds() -> Result<()> {
         alias: Some("Lunar Vagabound".to_string()),
     };
 
+    let atom_feed = Feed {
+        url: "https://dcorps.dev/feed.xml".to_string(),
+        feed_type: FeedType::ATOM,
+        poll_interval: 30,
+        alias: Some("DCorps".to_string()),
+    };
+
     let rss_feed_vec = vec![rss_feed];
 
     // TODO, add ToSql trait to interpret feed fields as what sql expects, hard coding for now
-    for f in rss_feed_vec {
+    for (idx, f) in rss_feed_vec.iter().enumerate() {
         // PK auto incremented in SQLite/rusqulite
         conn.execute(
             "INSERT OR IGNORE INTO RSSFeeds
@@ -156,73 +163,68 @@ pub fn create_fake_feeds() -> Result<()> {
             VALUES
                 (?1, ?2, ?3, ?4)
                 ",
-            params![1, f.url, f.poll_interval, f.alias],
+            params![idx, f.url, f.poll_interval, f.alias],
         )?;
     }
 
     // // TODO: Add atom Feed
-    // let atom_feed = Feed {
-    //     url: "https://run.mocky.io/v3/d3d616ed-4780-41f9-915f-bce277ae0afe".to_string(), // this url may need to be regenerated every so often
-    //     feed_type: FeedType::ATOM,
-    //     poll_interval: Duration::from_secs(1* 1* 10), // every 10 sec
-    // };
 
-    // let atom_feed_vec = vec![atom_feed]; // not necesary, but my brain wanted to do it
+    let atom_feed_vec = vec![atom_feed]; // not necesary, but my brain wanted to do it
 
-    // // TODO add ToSql trait to interpret feed fields as what sql expects, hard coding for now
-    // for f in atom_feed_vec {
-    //     conn.execute(
-    //         "INSERT OR IGNORE INTO AtomFeeds
-    //             (feed_id, url, poll_interval, alias)
-    //         VALUES
-    //             (?1, ?2, ?3, ?4)
-    //             ",
-    //             params![1, f.url, 10, "Mocky"]
-    //     )?;
-    // }
+    // TODO add ToSql trait to interpret feed fields as what sql expects, hard coding for now
+    for (idx, f) in atom_feed_vec.iter().enumerate() {
+        conn.execute(
+            "INSERT OR IGNORE INTO AtomFeeds
+                 (feed_id, url, poll_interval, alias)
+             VALUES
+                 (?1, ?2, ?3, ?4)
+                 ",
+            params![1, f.url, f.poll_interval, f.alias],
+        )?;
+    }
 
     Ok(())
 }
 
 //------------------------------------------------------------------------------------------
-
-pub fn create_fake_feed_items() -> Result<()> {
-    // let conn = Connection::open_in_memory()?;
-
-    let path = "./local_db.db3";
-    let conn = Connection::open(path)?;
-    //print!("{:?}\n", conn.is_autocommit());
-
-    // TODO: Actually read these articles from the feed, for now, hard code to test
-    let fake_atom_entry: Vec<AtomEntry> = vec![AtomEntry::new(
-        "Fake First Article".to_string(),
-        Some("url.com".to_string()),
-        Some("<h1>This is the description of the first article.</h1>".to_string()),
-        Some("1".to_string()),
-        Some("Yesterday".to_string()),
-        Some("John Doe".to_string()),
-        Some("News".to_string()),
-        Some("John Doe has lots to say about the news.".to_string()),
-        Some("Jane Doe".to_string()),
-        Some("2024-05-30T12:00:00".to_string()),
-        None, // rights
-    )];
-
-    for e in fake_atom_entry {
-        // PK auto incremented in SQLite/rusqulite
-        conn.execute(
-            "INSERT OR IGNORE INTO AtomEntry
-                (item_id, title, link, summary, id, updated, author, category, content, contributor, pub_date, rights, hash)
-            VALUES
-                (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
-                ",
-                params![1, e.title, e.link, e.summary, e.id, e.updated, e.author,
-                        e.category, e.content, e.contributor, e.pub_date, e.rights, e.hash]
-        )?;
-    }
-
-    Ok(())
-}
+//
+//pub fn create_fake_feed_items() -> Result<()> {
+//    // let conn = Connection::open_in_memory()?;
+//
+//    let path = "./local_db.db3";
+//    let conn = Connection::open(path)?;
+//    //print!("{:?}\n", conn.is_autocommit());
+//
+//    // TODO: Actually read these articles from the feed, for now, hard code to test
+//    let fake_atom_entry: Vec<AtomEntry> = vec![AtomEntry::new(
+//        "Fake First Article".to_string(),
+//        Some("url.com".to_string()),
+//        Some("<h1>This is the description of the first article.</h1>".to_string()),
+//        Some("1".to_string()),
+//        Some("Yesterday".to_string()),
+//        Some("John Doe".to_string()),
+//        Some("News".to_string()),
+//        Some("John Doe has lots to say about the news.".to_string()),
+//        Some("Jane Doe".to_string()),
+//        Some("2024-05-30T12:00:00".to_string()),
+//        None, // rights
+//    )];
+//
+//    for e in fake_atom_entry {
+//        // PK auto incremented in SQLite/rusqulite
+//        conn.execute(
+//            "INSERT OR IGNORE INTO AtomEntry
+//                (item_id, title, link, summary, id, updated, author, category, content, contributor, pub_date, rights, hash)
+//            VALUES
+//                (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+//                ",
+//                params![1, e.title, e.link, e.summary, e.id, e.updated, e.author,
+//                        e.category, e.content, e.contributor, e.pub_date, e.rights, e.hash]
+//        )?;
+//    }
+//
+//    Ok(())
+//}
 
 //------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -659,12 +661,11 @@ fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
 pub fn get_feed_items_db() -> Vec<FeedItem> {
     let mut atom_feed: Vec<FeedItem> = get_atom_entry_db().expect("Panic query fake AtomEntry");
     let mut rss_feed: Vec<FeedItem> = get_rss_entry_db().expect("Panic query fake RSSEntry");
-
     let mut full_feeds: Vec<FeedItem> = Vec::new();
     full_feeds.append(&mut atom_feed);
     full_feeds.append(&mut rss_feed);
 
-    println!("{:?}", full_feeds.len());
+    println!("Number of rows loaded from DB: {:?}", full_feeds.len());
 
     return full_feeds;
 }

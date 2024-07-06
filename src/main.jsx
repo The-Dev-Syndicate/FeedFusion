@@ -1,14 +1,13 @@
-// App.js (or your main entry point)
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
-import './App.css'; // Add your CSS imports here
+import './App.css'; 
 import About from './pages/About';
 import Layout from './components/PageLayouts/Base';
 import NotFound from './pages/NotFound';
 import { FeedProvider } from './components/contexts/FeedProvider';
-import { SelectedFeedProvider } from './components/contexts/SelectedFeedContext'; // Correct import for SelectedFeedProvider
+import { SelectedFeedProvider } from './components/contexts/SelectedFeedContext';
 
 const router = createBrowserRouter([
   {
@@ -33,7 +32,7 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <FeedProvider>
-    <SelectedFeedProvider> {/* Wrap your SelectedFeedProvider here */}
+    <SelectedFeedProvider> 
       <React.StrictMode>
         <RouterProvider router={router} />
       </React.StrictMode>

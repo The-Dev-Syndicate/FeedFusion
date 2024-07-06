@@ -1,51 +1,55 @@
-// src/pages/Articles.js
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ArticleCard from '../general/ArticleCard';
-import ArticleModal from './ArticleModal';
 import { RssItemsContext, ErrorsContext } from '../contexts/FeedProvider';
 import { SelectedFeedContext } from '../contexts/SelectedFeedContext';
 
 export default function Articles() {
+  const navigate = useNavigate();
   const { rssItems } = useContext(RssItemsContext);
   const { errors } = useContext(ErrorsContext);
   const { selectedFeed } = useContext(SelectedFeedContext);
-  const [selectedArticle, setSelectedArticle] = useState(null);
 
-  const handleCardClick = (article) => {
-    setSelectedArticle(article);
+  const handleCardClick = (title) => {
+    console.log('Clicked index:', title);
+    navigate(`/article/${title}`);
   };
 
-  const handleCloseModal = () => {
-    setSelectedArticle(null);
-  };
+  // Filter items based on selectedFeed
+  const filteredItems = rssItems.filter((article) => {
 
-  function getFirstSentence(htmlString) {
-    const div = document.createElement('div');
-    div.innerHTML = htmlString;
-    const firstParagraph = div.querySelector('p');
-    if (firstParagraph) {
-      const sentences = firstParagraph.innerText.split('. ');
-      return sentences.length > 0 ? sentences[0] + '.' : '';
+  const rssLink = article.Rss && article.Rss.link;
+  const atomLink = article.Atom && article.Atom.link;
+
+  console.log('Selected Feed:', selectedFeed);
+  console.log('RSS Link:', rssLink);
+  console.log('Atom Link:', atomLink);
+    if (!selectedFeed) {
+      return true; // No filter, show all items
     }
-    return '';
-  }
-
-  const filteredItems = selectedFeed
-    ? rssItems.filter((article) => article.Rss?.link?.startsWith(selectedFeed) || article.Atom?.link?.startsWith(selectedFeed))
-    : rssItems;
+    // Check if either Rss or Atom link starts with selectedFeed
+    return (
+      (article.Rss && article.Rss.link && article.Rss.link.startsWith(selectedFeed)) ||
+      (article.Atom && article.Atom.link && article.Atom.link.startsWith(selectedFeed))
+    );
+  });
 
   return (
     <div className="articles-container">
-      {filteredItems.map((article, index) => (
-        <div key={index} onClick={() => handleCardClick(article)}>
-          <ArticleCard
-            title={article.Rss ? article.Rss.title : article.Atom.title}
-            date={article.Rss ? article.Rss.pub_date : article.Atom.pub_date}
-            author={article.Rss ? article.Rss.author : article.Atom.author}
-            description={article.Rss ? getFirstSentence(article.Rss.description) : article.Atom.summary}
-          />
-        </div>
-      ))}
+      {filteredItems.length > 0 ? (
+        filteredItems.map((article, index) => (
+          <div key={index} onClick={() => handleCardClick(article.Rss ? article.Rss.title : article.Atom.title)}>
+            <ArticleCard
+              title={article.Rss ? article.Rss.title : article.Atom.title}
+              date={article.Rss ? article.Rss.pub_date : article.Atom.pub_date}
+              author={article.Rss ? article.Rss.author : article.Atom.author}
+              description={article.Rss ? article.Rss.description : article.Atom.summary}
+            />
+          </div>
+        ))
+      ) : (
+        <p>No articles available for the selected feed.</p>
+      )}
       {errors.length > 0 && (
         <div>
           <h2>Errors:</h2>
@@ -55,9 +59,6 @@ export default function Articles() {
             ))}
           </ul>
         </div>
-      )}
-      {selectedArticle && (
-        <ArticleModal article={selectedArticle} onClose={handleCloseModal} />
       )}
     </div>
   );

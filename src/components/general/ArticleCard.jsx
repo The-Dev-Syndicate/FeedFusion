@@ -1,4 +1,4 @@
-// src/general/ArticleCard.js
+// src/general/ArticlCard.js
 import React from 'react';
 
 function ArticleCard({ title, description, author, date, onClick }) {

@@ -194,7 +194,6 @@ fn fetch_feed(
 }
 
 fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
-    println!("Attempting to Fetch Feed from URL: {url}");
     let response = get(url)?.text()?;
     // println!("{:?}", response);
 

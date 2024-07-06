@@ -11,6 +11,11 @@ html,
   width: 100%;
 }
 
+hr {
+  margin-bottom: 2%;
+  margin-top: 1%;
+}
+
 .inline-button {
   background-color: #007bff;
   /* Blue background */
@@ -228,10 +233,6 @@ html,
   height: 85vh;
   overflow-y: auto;
   padding-right: 10%;
-}
-
-.article-p {
-  color: red; /* Just a toy example of how we can control the article's specifically */
 }
 
 /* Modal container */
