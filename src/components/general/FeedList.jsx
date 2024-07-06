@@ -13,12 +13,12 @@ export default function FeedList() {
         setFeeds(uniqueFeeds);
       })
       .catch(console.error);
-  }, []);
+  }, [feeds]); // Include feeds in the dependency array
 
   const removeDuplicates = (arr) => {
     const uniqueMap = new Map();
     arr.forEach((feed) => {
-      uniqueMap.set(feed.url, feed);
+      uniqueMap.set(feed.url, feed); // Ensure URL is used as the key for uniqueness
     });
     return Array.from(uniqueMap.values());
   };
@@ -41,4 +41,3 @@ export default function FeedList() {
     </ul>
   );
 }
-
