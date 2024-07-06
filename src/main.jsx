@@ -5,7 +5,6 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
 import './App.css'; // Add your CSS imports here
 import About from './pages/About';
-import Article from './components/general/Article';
 import Layout from './components/PageLayouts/Base';
 import NotFound from './pages/NotFound';
 import { FeedProvider } from './components/contexts/FeedProvider';
@@ -23,10 +22,6 @@ const router = createBrowserRouter([
       {
         path: '/about',
         element: <About />
-      },
-      {
-        path: '/article/:title',
-        element: <Article />
       },
       {
         path: '*',

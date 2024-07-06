@@ -1,18 +1,22 @@
-import React, { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/pages/Articles.js
+import React, { useContext, useState } from 'react';
 import ArticleCard from '../general/ArticleCard';
+import ArticleModal from './ArticleModal';
 import { RssItemsContext, ErrorsContext } from '../contexts/FeedProvider';
 import { SelectedFeedContext } from '../contexts/SelectedFeedContext';
 
 export default function Articles() {
-  const navigate = useNavigate();
   const { rssItems } = useContext(RssItemsContext);
   const { errors } = useContext(ErrorsContext);
   const { selectedFeed } = useContext(SelectedFeedContext);
+  const [selectedArticle, setSelectedArticle] = useState(null);
 
-  const handleCardClick = (title) => {
-    console.log('Clicked index:', title);
-    navigate(`/article/${title}`);
+  const handleCardClick = (article) => {
+    setSelectedArticle(article);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedArticle(null);
   };
 
   function getFirstSentence(htmlString) {
@@ -33,7 +37,7 @@ export default function Articles() {
   return (
     <div className="articles-container">
       {filteredItems.map((article, index) => (
-        <div key={index} onClick={() => handleCardClick(article.Rss ? `${article.Rss.hash}` : `${article.Atom.hash}`)}>
+        <div key={index} onClick={() => handleCardClick(article)}>
           <ArticleCard
             title={article.Rss ? article.Rss.title : article.Atom.title}
             date={article.Rss ? article.Rss.pub_date : article.Atom.pub_date}
@@ -52,7 +56,9 @@ export default function Articles() {
           </ul>
         </div>
       )}
+      {selectedArticle && (
+        <ArticleModal article={selectedArticle} onClose={handleCloseModal} />
+      )}
     </div>
   );
 }
-
