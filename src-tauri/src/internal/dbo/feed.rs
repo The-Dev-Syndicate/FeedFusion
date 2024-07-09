@@ -164,14 +164,14 @@ pub struct Feed {
 impl Feed {
     pub fn new(
         feed_url: String,
-        feed_alias: Option<String>,
+        feed_alias: String,
         poll_interval: i32,
         feed_type: FeedType,
     ) -> Self {
         // changed to handle values in seconds
         Self {
             url: feed_url,
-            alias: feed_alias,
+            alias: Some(feed_alias),
             poll_interval,
             feed_type,
         }
