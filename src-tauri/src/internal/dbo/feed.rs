@@ -1,156 +1,17 @@
 use reqwest::blocking::get;
 use serde::Serialize;
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 use tauri::{AppHandle, Runtime};
 
-use crate::internal;
-
-#[derive(Serialize, Debug)] // Debug for printing to console
-pub enum FeedItem {
-    Rss(RssEntry),
-    Atom(AtomEntry),
-}
+use crate::internal::dbo::entry::{AtomEntry, FeedEntryType, RssEntry};
+use crate::internal::sqlite_db::{get_feed_items_db, put_feed_items_db};
 
 #[derive(Clone, Debug, Serialize)] // Debug for printing to console
 pub enum FeedType {
     RSS,
     ATOM,
-}
-
-#[derive(Serialize, Debug)] // Debug for printing to console
-pub struct RssEntry {
-    // Required fields
-    pub title: String,
-    pub hash: i64,
-    pub link: Option<String>,
-    pub description: Option<String>,
-    // Optional fields
-    pub pub_date: Option<String>,
-    pub author: Option<String>,
-    pub category: Option<String>,
-    pub comments: Option<String>,
-    pub enclosure: Option<String>,
-    pub guid: Option<String>,
-}
-
-impl RssEntry {
-    pub fn new(
-        title: String,
-        link: Option<String>,
-        description: Option<String>,
-        pub_date: Option<String>,
-        author: Option<String>,
-        category: Option<String>,
-        comments: Option<String>,
-        enclosure: Option<String>,
-        guid: Option<String>,
-    ) -> Self {
-        let mut hasher = DefaultHasher::new();
-        title.hash(&mut hasher);
-        link.hash(&mut hasher);
-        description.hash(&mut hasher);
-        pub_date.hash(&mut hasher);
-        author.hash(&mut hasher);
-        category.hash(&mut hasher);
-        comments.hash(&mut hasher);
-        enclosure.hash(&mut hasher);
-        guid.hash(&mut hasher);
-        let hash = hasher.finish() as i64;
-
-        RssEntry {
-            title,
-            link,
-            description,
-            pub_date,
-            author,
-            category,
-            comments,
-            enclosure,
-            guid,
-            hash,
-        }
-    }
-}
-
-// Struct for Atom item
-#[derive(Serialize, Debug)] // Debug for printing to console
-pub struct AtomEntry {
-    // Required fields
-    pub title: String,
-    pub link: Option<String>,
-    pub summary: Option<String>,
-    // Optional fields
-    pub id: Option<String>,
-    pub updated: Option<String>,
-    pub author: Option<String>,
-    pub category: Option<String>,
-    pub content: Option<String>,
-    pub contributor: Option<String>,
-    pub pub_date: Option<String>,
-    pub rights: Option<String>,
-    pub hash: i64,
-}
-
-impl AtomEntry {
-    pub fn new(
-        title: String,
-        link: Option<String>,
-        summary: Option<String>,
-        id: Option<String>,
-        updated: Option<String>,
-        author: Option<String>,
-        category: Option<String>,
-        content: Option<String>,
-        contributor: Option<String>,
-        pub_date: Option<String>,
-        rights: Option<String>,
-    ) -> Self {
-        let mut hasher = DefaultHasher::new();
-
-        // Hash the title
-        title.hash(&mut hasher);
-
-        // Hash each optional field if it exists
-        let fields_to_hash = [
-            &link,
-            &summary,
-            &id,
-            &updated,
-            &author,
-            &category,
-            &content,
-            &contributor,
-            &pub_date,
-            &rights,
-        ];
-
-        for field in fields_to_hash.iter() {
-            if let Some(value) = field {
-                value.hash(&mut hasher);
-            }
-        }
-
-        let hash = hasher.finish() as i64;
-
-        AtomEntry {
-            title,
-            link,
-            summary,
-            id,
-            updated,
-            author,
-            category,
-            content,
-            contributor,
-            pub_date,
-            rights,
-            hash,
-        }
-    }
 }
 
 #[derive(Clone, Debug, Serialize)] // Debug for printing to console
@@ -181,25 +42,24 @@ impl Feed {
 fn fetch_feed(
     url: &str,
     feed_type: &FeedType,
-) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
+) -> Result<Vec<FeedEntryType>, Box<dyn std::error::Error>> {
     let new_feed_item = match feed_type {
         FeedType::RSS => fetch_rss(url).expect("Error fetching RSS feed item"),
         FeedType::ATOM => fetch_atom(url).expect("Error fetching Atom feed item"),
     };
     // insert newly fetched item into DB
-    internal::sqlite_db::put_feed_items_db(new_feed_item)
-        .expect("Error sending fetched feed to DB");
+    put_feed_items_db(new_feed_item).expect("Error sending fetched feed to DB");
 
     Ok(vec![])
 }
 
-fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
+fn fetch_rss(url: &str) -> Result<Vec<FeedEntryType>, Box<dyn std::error::Error>> {
     let response = get(url)?.text()?;
     // println!("{:?}", response);
 
     let channel = rss::Channel::read_from(response.as_bytes())?;
 
-    let items: Vec<FeedItem> = channel
+    let items: Vec<FeedEntryType> = channel
         .items()
         .iter()
         .filter_map(|item| {
@@ -207,7 +67,7 @@ fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
             if title.is_none() {
                 title = Some(channel.title().to_string());
             }
-            Some(FeedItem::Rss(RssEntry::new(
+            Some(FeedEntryType::RSS(RssEntry::new(
                 title.unwrap(),
                 item.link().map(|s| s.to_string()),
                 item.description().map(|s| s.to_string()),
@@ -224,11 +84,11 @@ fn fetch_rss(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
     Ok(items)
 }
 
-fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
+fn fetch_atom(url: &str) -> Result<Vec<FeedEntryType>, Box<dyn std::error::Error>> {
     let response = get(url)?.text()?;
     let feed = atom_syndication::Feed::read_from(response.as_bytes())?;
 
-    let items: Vec<FeedItem> = feed
+    let items: Vec<FeedEntryType> = feed
         .entries()
         .iter()
         .filter_map(|entry| {
@@ -263,7 +123,7 @@ fn fetch_atom(url: &str) -> Result<Vec<FeedItem>, Box<dyn std::error::Error>> {
                 entry.rights().map(|rights| rights.to_string()),
             );
 
-            Some(FeedItem::Atom(atom_entry))
+            Some(FeedEntryType::ATOM(atom_entry))
         })
         .collect();
 
@@ -302,7 +162,7 @@ fn fetch_and_emit_feed<R: Runtime>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     // let items = fetch_feed(&feed.url, &feed.feed_type)?; // To be deleted
     let _x = fetch_feed(&feed.url, &feed.feed_type); // THIS IS ERRORING on RSS item fetch, will send fetched items to DB
-    let items = internal::sqlite_db::get_feed_items_db(); // pull items from DB, not directly from fetch
+    let items = get_feed_items_db(); // pull items from DB, not directly from fetch
     app.emit_all("new-rss-items", &items)?; // NO EMIT, that is done elsewhere, direct from DB
 
     Ok(())

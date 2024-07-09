@@ -1,4 +1,5 @@
-use crate::internal::dbo::feed::{AtomEntry, Feed, FeedItem, FeedType, RssEntry};
+use crate::internal::dbo::entry::{AtomEntry, FeedEntryType, RssEntry};
+use crate::internal::dbo::feed::{Feed, FeedType};
 use rusqlite::{params, Connection, OptionalExtension, Result};
 
 //-----------//
@@ -277,13 +278,13 @@ pub fn put_rss_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) ->
 
 //------------------------------------------------------------------------------------------
 
-pub fn put_feed_items_db(items: Vec<FeedItem>) -> Result<()> {
+pub fn put_feed_items_db(items: Vec<FeedEntryType>) -> Result<()> {
     for item in items {
         let _e = match item {
-            FeedItem::Rss(e) => {
+            FeedEntryType::RSS(e) => {
                 put_rss_entry_db(e).expect("Thing1");
             }
-            FeedItem::Atom(e) => {
+            FeedEntryType::ATOM(e) => {
                 put_atom_entry_db(e).expect("Thing2");
             }
         };
@@ -546,7 +547,7 @@ pub fn get_atom_feeds_db() -> Result<Vec<Feed>> {
 
 //------------------------------------------------------------------------------------------
 
-fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
+fn get_atom_entry_db() -> Result<Vec<FeedEntryType>> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
     //print!("{:?}\n", conn.is_autocommit());
@@ -584,7 +585,7 @@ fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
         })
     })?;
 
-    let mut db_atom_entry: Vec<FeedItem> = vec![];
+    let mut db_atom_entry: Vec<FeedEntryType> = vec![];
 
     for entry in atom_iter {
         // FIXME this is innefficient, can I do something directily from article_iter?
@@ -595,7 +596,7 @@ fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
                 continue;
             }
         };
-        db_atom_entry.push(FeedItem::Atom(e));
+        db_atom_entry.push(FeedEntryType::ATOM(e));
     }
 
     Ok(db_atom_entry)
@@ -603,7 +604,7 @@ fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
 
 //------------------------------------------------------------------------------------------
 
-fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
+fn get_rss_entry_db() -> Result<Vec<FeedEntryType>> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
     //print!("{:?}\n", conn.is_autocommit());
@@ -639,7 +640,7 @@ fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
         })
     })?;
 
-    let mut db_rss_entry: Vec<FeedItem> = vec![];
+    let mut db_rss_entry: Vec<FeedEntryType> = vec![];
 
     for entry in rss_iter {
         // this is innefficient, can I do something directily from article_iter?
@@ -650,7 +651,7 @@ fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
                 continue;
             }
         };
-        db_rss_entry.push(FeedItem::Rss(e));
+        db_rss_entry.push(FeedEntryType::RSS(e));
     }
 
     Ok(db_rss_entry)
@@ -658,10 +659,11 @@ fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
 
 //------------------------------------------------------------------------------------------
 
-pub fn get_feed_items_db() -> Vec<FeedItem> {
-    let mut atom_feed: Vec<FeedItem> = get_atom_entry_db().expect("Panic query fake AtomEntry");
-    let mut rss_feed: Vec<FeedItem> = get_rss_entry_db().expect("Panic query fake RSSEntry");
-    let mut full_feeds: Vec<FeedItem> = Vec::new();
+pub fn get_feed_items_db() -> Vec<FeedEntryType> {
+    let mut atom_feed: Vec<FeedEntryType> =
+        get_atom_entry_db().expect("Panic query fake AtomEntry");
+    let mut rss_feed: Vec<FeedEntryType> = get_rss_entry_db().expect("Panic query fake RSSEntry");
+    let mut full_feeds: Vec<FeedEntryType> = Vec::new();
     full_feeds.append(&mut atom_feed);
     full_feeds.append(&mut rss_feed);
 
