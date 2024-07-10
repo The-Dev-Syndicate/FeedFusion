@@ -16,12 +16,12 @@ export default function Articles() {
   const handleCardClick = (hash) => {
     console.log('Clicked index:', hash);
     const article = rssItems.find(item => {
-      const rssHash = item.Rss ? String(item.Rss.hash) : null;
-      const atomHash = item.Atom ? String(item.Atom.hash) : null;
+      const rssHash = item.RSS ? String(item.RSS.hash) : null;
+      const atomHash = item.ATOM ? String(item.ATOM.hash) : null;
       
       console.log('Checking item:', { rssHash, atomHash });
 
-      return (item.Rss && rssHash === hash) || (item.Atom && atomHash === hash);
+      return (item.RSS && rssHash === hash) || (item.ATOM && atomHash === hash);
     });
 
     if (article) {
@@ -43,19 +43,19 @@ export default function Articles() {
   }
 
   const filteredItems = selectedFeed
-    ? rssItems.filter((article) => article.Rss?.link?.startsWith(selectedFeed) || article.Atom?.link?.startsWith(selectedFeed))
+    ? rssItems.filter((article) => article.RSS?.link?.startsWith(selectedFeed) || article.ATOM?.link?.startsWith(selectedFeed))
     : rssItems;
 
   return (
     <div className="articles-container">
       {filteredItems.map((article, index) => (
-        <div key={index} onClick={() => handleCardClick(article.Rss ? `${article.Rss.hash}` : `${article.Atom.hash}`)}>
+        <div key={index} onClick={() => handleCardClick(article.RSS ? `${article.RSS.hash}` : `${article.ATOM.hash}`)}>
           <ArticleCard
-            title={article.Rss ? article.Rss.title : article.Atom.title}
-            date={article.Rss ? article.Rss.pub_date : article.Atom.pub_date}
-            author={article.Rss ? article.Rss.author : article.Atom.author}
-            description={article.Rss ? getFirstSentence(article.Rss.description) : article.Atom.summary}
-            onClick={() => handleCardClick(article.Rss ? `${article.Rss.hash}` : `${article.Atom.hash}`)}
+            title={article.RSS ? article.RSS.title : article.ATOM.title}
+            date={article.RSS ? article.RSS.pub_date : article.ATOM.pub_date}
+            author={article.RSS ? article.RSS.author : article.ATOM.author}
+            description={article.RSS ? getFirstSentence(article.RSS.description) : article.ATOM.summary}
+            onClick={() => handleCardClick(article.RSS ? `${article.RSS.hash}` : `${article.ATOM.hash}`)}
           />
         </div>
       ))}

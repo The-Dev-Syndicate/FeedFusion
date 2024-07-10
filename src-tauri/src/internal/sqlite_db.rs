@@ -1,6 +1,5 @@
-use std::collections::hash_set;
-
-use crate::internal::dbo::feed::{AtomEntry, Feed, FeedItem, FeedType, RssEntry};
+use crate::internal::dbo::entry::{AtomEntry, FeedEntryType, RssEntry};
+use crate::internal::dbo::feed::{Feed, FeedType};
 use rusqlite::{params, Connection, OptionalExtension, Result};
 
 //-----------//
@@ -138,19 +137,19 @@ pub fn create_fake_feeds() -> Result<()> {
     //print!("{:?}\n", conn.is_autocommit());
 
     // TODO: create ToSql trait for FeedType, Duration
-    let rss_feed = Feed {
-        url: "https://mastodon.social/@lunar_vagabond.rss".to_string(),
-        feed_type: FeedType::RSS,
-        poll_interval: 10, // every 10 sec,
-        alias: Some("Lunar Vagabound".to_string()),
-    };
+    let rss_feed = Feed::new(
+        "https://mastodon.social/@lunar_vagabond.rss".to_string(),
+        "Lunar Vagabound".to_string(),
+        10,
+        FeedType::RSS,
+    );
 
-    let atom_feed = Feed {
-        url: "https://dcorps.dev/feed.xml".to_string(),
-        feed_type: FeedType::ATOM,
-        poll_interval: 30,
-        alias: Some("DCorps".to_string()),
-    };
+    let atom_feed = Feed::new(
+        "https://dcorps.dev/feed.xml".to_string(),
+        "DCrops".to_string(),
+        30,
+        FeedType::ATOM,
+    );
 
     let rss_feed_vec = vec![rss_feed];
 
@@ -172,7 +171,7 @@ pub fn create_fake_feeds() -> Result<()> {
     let atom_feed_vec = vec![atom_feed]; // not necesary, but my brain wanted to do it
 
     // TODO add ToSql trait to interpret feed fields as what sql expects, hard coding for now
-    for (idx, f) in atom_feed_vec.iter().enumerate() {
+    for (_, f) in atom_feed_vec.iter().enumerate() {
         conn.execute(
             "INSERT OR IGNORE INTO AtomFeeds
                  (feed_id, url, poll_interval, alias)
@@ -256,34 +255,36 @@ pub fn put_rss_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) ->
 
 //------------------------------------------------------------------------------------------
 
-pub fn put_atom_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) -> Result<()> {
-    let path = "./local_db.db3";
-    let conn = Connection::open(path)?;
-    //print!("{:?}\n", conn.is_autocommit());
-
-    conn.execute(
-        "INSERT OR IGNORE INTO AtomFeeds
-            (url, poll_interval, alias)
-        VALUES
-            (?1, ?2, ?3)
-        ",
-        params![feed_url, poll_timer, feed_alias],
-    )?;
-
-    println!("Atom Feed uploaded, but not the correct way to test this, use match, or something");
-
-    Ok(())
-}
+// FIXME: This code is dead code but leaving it here so a developer can use it to consolidate the
+// other put_rss_feed function into a single func to handle both
+//pub fn put_atom_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) -> Result<()> {
+//    let path = "./local_db.db3";
+//    let conn = Connection::open(path)?;
+//    //print!("{:?}\n", conn.is_autocommit());
+//
+//    conn.execute(
+//        "INSERT OR IGNORE INTO AtomFeeds
+//            (url, poll_interval, alias)
+//        VALUES
+//            (?1, ?2, ?3)
+//        ",
+//        params![feed_url, poll_timer, feed_alias],
+//    )?;
+//
+//    println!("Atom Feed uploaded, but not the correct way to test this, use match, or something");
+//
+//    Ok(())
+//}
 
 //------------------------------------------------------------------------------------------
 
-pub fn put_feed_items_db(items: Vec<FeedItem>) -> Result<()> {
+pub fn put_feed_items_db(items: Vec<FeedEntryType>) -> Result<()> {
     for item in items {
         let _e = match item {
-            FeedItem::Rss(e) => {
+            FeedEntryType::RSS(e) => {
                 put_rss_entry_db(e).expect("Thing1");
             }
-            FeedItem::Atom(e) => {
+            FeedEntryType::ATOM(e) => {
                 put_atom_entry_db(e).expect("Thing2");
             }
         };
@@ -475,12 +476,12 @@ pub fn get_rss_feeds_db() -> Result<Vec<Feed>> {
 
     // TODO: Control logic that this is a valid SELECT statement
     let feed_iter = stmt.query_map([], |row| {
-        Ok(Feed {
-            url: row.get(0)?,
-            alias: row.get(1)?,
-            poll_interval: row.get(2)?,
-            feed_type: FeedType::RSS,
-        })
+        Ok(Feed::new(
+            row.get(0)?,
+            row.get(1)?,
+            row.get(2)?,
+            FeedType::RSS,
+        ))
     })?;
 
     let mut db_rss_feed: Vec<Feed> = vec![];
@@ -516,14 +517,14 @@ pub fn get_atom_feeds_db() -> Result<Vec<Feed>> {
         ",
     )?;
 
-    // TODO: Control logic that this is a valid SELECT statement
+    // TODO: We should get rid of all the ? and ensure proper uncrashable handling
     let feed_iter = stmt.query_map([], |row| {
-        Ok(Feed {
-            url: row.get(0)?,
-            alias: row.get(1)?,
-            poll_interval: row.get(2)?,
-            feed_type: FeedType::ATOM,
-        })
+        Ok(Feed::new(
+            row.get(0)?,
+            row.get(1)?,
+            row.get(2)?,
+            FeedType::ATOM,
+        ))
     })?;
 
     let mut db_atom_feed: Vec<Feed> = vec![];
@@ -546,7 +547,7 @@ pub fn get_atom_feeds_db() -> Result<Vec<Feed>> {
 
 //------------------------------------------------------------------------------------------
 
-fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
+fn get_atom_entry_db() -> Result<Vec<FeedEntryType>> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
     //print!("{:?}\n", conn.is_autocommit());
@@ -584,7 +585,7 @@ fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
         })
     })?;
 
-    let mut db_atom_entry: Vec<FeedItem> = vec![];
+    let mut db_atom_entry: Vec<FeedEntryType> = vec![];
 
     for entry in atom_iter {
         // FIXME this is innefficient, can I do something directily from article_iter?
@@ -595,7 +596,7 @@ fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
                 continue;
             }
         };
-        db_atom_entry.push(FeedItem::Atom(e));
+        db_atom_entry.push(FeedEntryType::ATOM(e));
     }
 
     Ok(db_atom_entry)
@@ -603,7 +604,7 @@ fn get_atom_entry_db() -> Result<Vec<FeedItem>> {
 
 //------------------------------------------------------------------------------------------
 
-fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
+fn get_rss_entry_db() -> Result<Vec<FeedEntryType>> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
     //print!("{:?}\n", conn.is_autocommit());
@@ -639,7 +640,7 @@ fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
         })
     })?;
 
-    let mut db_rss_entry: Vec<FeedItem> = vec![];
+    let mut db_rss_entry: Vec<FeedEntryType> = vec![];
 
     for entry in rss_iter {
         // this is innefficient, can I do something directily from article_iter?
@@ -650,7 +651,7 @@ fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
                 continue;
             }
         };
-        db_rss_entry.push(FeedItem::Rss(e));
+        db_rss_entry.push(FeedEntryType::RSS(e));
     }
 
     Ok(db_rss_entry)
@@ -658,10 +659,11 @@ fn get_rss_entry_db() -> Result<Vec<FeedItem>> {
 
 //------------------------------------------------------------------------------------------
 
-pub fn get_feed_items_db() -> Vec<FeedItem> {
-    let mut atom_feed: Vec<FeedItem> = get_atom_entry_db().expect("Panic query fake AtomEntry");
-    let mut rss_feed: Vec<FeedItem> = get_rss_entry_db().expect("Panic query fake RSSEntry");
-    let mut full_feeds: Vec<FeedItem> = Vec::new();
+pub fn get_feed_items_db() -> Vec<FeedEntryType> {
+    let mut atom_feed: Vec<FeedEntryType> =
+        get_atom_entry_db().expect("Panic query fake AtomEntry");
+    let mut rss_feed: Vec<FeedEntryType> = get_rss_entry_db().expect("Panic query fake RSSEntry");
+    let mut full_feeds: Vec<FeedEntryType> = Vec::new();
     full_feeds.append(&mut atom_feed);
     full_feeds.append(&mut rss_feed);
 

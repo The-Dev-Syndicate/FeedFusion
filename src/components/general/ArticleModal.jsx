@@ -28,29 +28,29 @@ export default function ArticleModal({ article, onClose }) {
     });
   };
 
-  let content = article.Rss ? article.Rss.description : article.Atom.summary;
+  let content = article.RSS ? article.RSS.description : article.ATOM.summary;
   content = content ? parseWithClassNames(String(content)) : null;
-  let link = article.Rss && article.Rss.link ? article.Rss.link : (article.Atom && article.Atom.link ? article.Atom.link : 'No link available');
+  let link = article.RSS && article.RSS.link ? article.RSS.link : (article.ATOM && article.ATOM.link ? article.ATOM.link : 'No link available');
 
   return (
     <div className="modal">
       <div className="modal-content">
         <span className="close" onClick={onClose}>&times;</span>
-        <h1>{article.Rss ? article.Rss.title : article.Atom.title}</h1>
+        <h1>{article.RSS ? article.RSS.title : article.ATOM.title}</h1>
         <hr / >
         <a href="{link}"><small>{link} - This needs to be a tauri api call</small></a>
         <hr />
         <p>{content ? content : 'No summary available'}</p>
         <hr />
-        <p>Entry by <b>{article.Rss ? article.Rss.author : article.Atom.author}</b></p> 
-        <p>Written on {article.Rss ? article.Rss.pub_date : article.Atom.pub_date}</p>
-        <p>From {article.Rss ? article.Rss.source : article.Atom.id}</p>
-        <p>Contributors [{article.Rss ? article.Rss.contributor : article.Atom.contributor}]</p>
-        <p>Hash: {article.Rss ? article.Rss.hash : article.Atom.hash}</p>
+        <p>Entry by <b>{article.RSS ? article.RSS.author : article.ATOM.author}</b></p> 
+        <p>Written on {article.RSS ? article.RSS.pub_date : article.ATOM.pub_date}</p>
+        <p>From {article.RSS ? article.RSS.source : article.ATOM.id}</p>
+        <p>Contributors [{article.RSS ? article.RSS.contributor : article.ATOM.contributor}]</p>
+        <p>Hash: {article.RSS ? article.RSS.hash : article.ATOM.hash}</p>
         <div>
           <h4>Rights</h4>
-          <span>{article.Rss ? article.Rss.rights : article.Atom.rights}</span>
-          <h4>Category: {article.Rss ? article.Rss.category : article.Atom.category}</h4>
+          <span>{article.RSS ? article.RSS.rights : article.ATOM.rights}</span>
+          <h4>Category: {article.RSS ? article.RSS.category : article.ATOM.category}</h4>
         </div>
       </div>
     </div>
