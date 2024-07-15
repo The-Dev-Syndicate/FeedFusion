@@ -1,13 +1,10 @@
-// src/pages/Articles.js
 import React, { useContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import ArticleCard from '../general/ArticleCard';
 import { RssItemsContext, ErrorsContext } from '../contexts/FeedProvider';
 import { SelectedFeedContext } from '../contexts/SelectedFeedContext';
 import ArticleModal from './ArticleModal'; // Import the new ArticleModal component
 
 export default function Articles() {
-  const navigate = useNavigate();
   const { rssItems } = useContext(RssItemsContext);
   const { errors } = useContext(ErrorsContext);
   const { selectedFeed } = useContext(SelectedFeedContext);
@@ -42,9 +39,14 @@ export default function Articles() {
     return '';
   }
 
-  const filteredItems = selectedFeed
+  const filteredItems = (selectedFeed
     ? rssItems.filter((article) => article.RSS?.link?.startsWith(selectedFeed) || article.ATOM?.link?.startsWith(selectedFeed))
-    : rssItems;
+    : rssItems
+  ).sort((a, b) => {
+    const aDate = new Date(a.RSS ? a.RSS.pub_date : a.ATOM.pub_date);
+    const bDate = new Date(b.RSS ? b.RSS.pub_date : b.ATOM.pub_date);
+    return bDate - aDate;
+  });
 
   return (
     <div className="articles-container">
