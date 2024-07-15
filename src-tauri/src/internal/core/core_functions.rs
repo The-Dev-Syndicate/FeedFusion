@@ -1,7 +1,7 @@
 use url::Url;
 
 use crate::internal;
-use crate::internal::dbo::{article::Article, feed::Feed};
+use crate::internal::dbo::feed::Feed;
 
 #[derive(Debug)]
 pub enum FeedError {
@@ -15,16 +15,20 @@ pub fn greet(name: &str) -> String {
 pub fn load_feeds() -> Vec<Feed> {
     let feeds_db = internal::sqlite_db::get_feeds_db().expect("Issue pulling Feeds from DB for FE");
 
-    return feeds_db
+    return feeds_db;
 }
 
 pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: i32) -> Result<(), String> {
     match validate_and_correct_url(&feed_url) {
         Ok(_) => {
-            println!("Eventually we will build with {} - {}", feed_alias, poll_timer);
+            println!(
+                "Eventually we will build with {} - {}",
+                feed_alias, poll_timer
+            );
 
             // TODO match -> RSS function, Atom function
-            internal::sqlite_db::put_rss_feed_db(feed_url, poll_timer, feed_alias).expect("Error adding new feed");
+            internal::sqlite_db::put_rss_feed_db(feed_url, poll_timer, feed_alias)
+                .expect("Error adding new feed");
 
             Ok(())
         }

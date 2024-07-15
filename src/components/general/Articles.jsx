@@ -1,13 +1,10 @@
-// src/pages/Articles.js
 import React, { useContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import ArticleCard from '../general/ArticleCard';
 import { RssItemsContext, ErrorsContext } from '../contexts/FeedProvider';
 import { SelectedFeedContext } from '../contexts/SelectedFeedContext';
 import ArticleModal from './ArticleModal'; // Import the new ArticleModal component
 
 export default function Articles() {
-  const navigate = useNavigate();
   const { rssItems } = useContext(RssItemsContext);
   const { errors } = useContext(ErrorsContext);
   const { selectedFeed } = useContext(SelectedFeedContext);
@@ -16,12 +13,12 @@ export default function Articles() {
   const handleCardClick = (hash) => {
     console.log('Clicked index:', hash);
     const article = rssItems.find(item => {
-      const rssHash = item.Rss ? String(item.Rss.hash) : null;
-      const atomHash = item.Atom ? String(item.Atom.hash) : null;
+      const rssHash = item.RSS ? String(item.RSS.hash) : null;
+      const atomHash = item.ATOM ? String(item.ATOM.hash) : null;
       
       console.log('Checking item:', { rssHash, atomHash });
 
-      return (item.Rss && rssHash === hash) || (item.Atom && atomHash === hash);
+      return (item.RSS && rssHash === hash) || (item.ATOM && atomHash === hash);
     });
 
     if (article) {
@@ -42,20 +39,25 @@ export default function Articles() {
     return '';
   }
 
-  const filteredItems = selectedFeed
-    ? rssItems.filter((article) => article.Rss?.link?.startsWith(selectedFeed) || article.Atom?.link?.startsWith(selectedFeed))
-    : rssItems;
+  const filteredItems = (selectedFeed
+    ? rssItems.filter((article) => article.RSS?.link?.startsWith(selectedFeed) || article.ATOM?.link?.startsWith(selectedFeed))
+    : rssItems
+  ).sort((a, b) => {
+    const aDate = new Date(a.RSS ? a.RSS.pub_date : a.ATOM.pub_date);
+    const bDate = new Date(b.RSS ? b.RSS.pub_date : b.ATOM.pub_date);
+    return bDate - aDate;
+  });
 
   return (
     <div className="articles-container">
       {filteredItems.map((article, index) => (
-        <div key={index} onClick={() => handleCardClick(article.Rss ? `${article.Rss.hash}` : `${article.Atom.hash}`)}>
+        <div key={index} onClick={() => handleCardClick(article.RSS ? `${article.RSS.hash}` : `${article.ATOM.hash}`)}>
           <ArticleCard
-            title={article.Rss ? article.Rss.title : article.Atom.title}
-            date={article.Rss ? article.Rss.pub_date : article.Atom.pub_date}
-            author={article.Rss ? article.Rss.author : article.Atom.author}
-            description={article.Rss ? getFirstSentence(article.Rss.description) : article.Atom.summary}
-            onClick={() => handleCardClick(article.Rss ? `${article.Rss.hash}` : `${article.Atom.hash}`)}
+            title={article.RSS ? article.RSS.title : article.ATOM.title}
+            date={article.RSS ? article.RSS.pub_date : article.ATOM.pub_date}
+            author={article.RSS ? article.RSS.author : article.ATOM.author}
+            description={article.RSS ? getFirstSentence(article.RSS.description) : article.ATOM.summary}
+            onClick={() => handleCardClick(article.RSS ? `${article.RSS.hash}` : `${article.ATOM.hash}`)}
           />
         </div>
       ))}
