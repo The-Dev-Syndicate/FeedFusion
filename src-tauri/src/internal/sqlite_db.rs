@@ -1,5 +1,6 @@
 use crate::internal::dbo::entry::{AtomEntry, FeedEntryType, RssEntry};
 use crate::internal::dbo::feed::{Feed, FeedType};
+use log::{debug, error, warn};
 use rusqlite::{params, Connection, OptionalExtension, Result};
 
 //-----------//
@@ -237,7 +238,7 @@ pub fn create_fake_feeds() -> Result<()> {
 pub fn put_rss_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) -> Result<()> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    //print!("{:?}\n", conn.is_autocommit());
+    //debug!("{:?}\n", conn.is_autocommit());
 
     conn.execute(
         "INSERT OR IGNORE INTO RSSFeeds
@@ -248,7 +249,7 @@ pub fn put_rss_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) ->
         params![feed_url, poll_timer, feed_alias], // send "test_category" for feed_category
     )?;
 
-    println!("RSS Feed uploaded, but not the correct way to test this, use match, or something");
+    warn!("RSS Feed uploaded, but not the correct way to test this, use match, or something");
 
     Ok(())
 }
@@ -260,7 +261,7 @@ pub fn put_rss_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) ->
 //pub fn put_atom_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) -> Result<()> {
 //    let path = "./local_db.db3";
 //    let conn = Connection::open(path)?;
-//    //print!("{:?}\n", conn.is_autocommit());
+//    //debug!("{:?}\n", conn.is_autocommit());
 //
 //    conn.execute(
 //        "INSERT OR IGNORE INTO AtomFeeds
@@ -271,7 +272,7 @@ pub fn put_rss_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) ->
 //        params![feed_url, poll_timer, feed_alias],
 //    )?;
 //
-//    println!("Atom Feed uploaded, but not the correct way to test this, use match, or something");
+//    warn!("Atom Feed uploaded, but not the correct way to test this, use match, or something");
 //
 //    Ok(())
 //}
@@ -298,7 +299,7 @@ pub fn put_feed_items_db(items: Vec<FeedEntryType>) -> Result<()> {
 pub fn put_atom_entry_db(e: AtomEntry) -> Result<()> {
     let path = "./local_db.db3";
     let conn = Connection::open(path)?;
-    //print!("{:?}\n", conn.is_autocommit());
+    //debug!("{:?}\n", conn.is_autocommit());
 
     let mut stmt = conn.prepare(
         "
@@ -491,8 +492,8 @@ pub fn get_rss_feeds_db() -> Result<Vec<Feed>> {
         let e = match entry {
             Ok(entry) => entry,
             Err(_) => {
-                println!("Error converting RSSFeed query to vector");
-                println!("FeedQuery: {:?}", entry.unwrap());
+                warn!("Error converting RSSFeed query to vector");
+                warn!("FeedQuery: {:?}", entry.unwrap());
                 continue;
             }
         };
@@ -534,8 +535,8 @@ pub fn get_atom_feeds_db() -> Result<Vec<Feed>> {
         let e = match entry {
             Ok(entry) => entry,
             Err(_) => {
-                println!("Error converting AtomFeed query to vector");
-                println!("FeedQuery: {:?}", entry.unwrap());
+                warn!("Error converting AtomFeed query to vector");
+                warn!("FeedQuery: {:?}", entry.unwrap());
                 continue;
             }
         };
@@ -565,7 +566,7 @@ fn get_atom_entry_db() -> Result<Vec<FeedEntryType>> {
         let hash: i64 = match row.get(11) {
             Ok(hash) => hash,
             Err(e) => {
-                eprintln!("Error loading atom hash: {e}");
+                error!("Error loading atom hash: {e}");
                 0
             }
         };
@@ -592,7 +593,7 @@ fn get_atom_entry_db() -> Result<Vec<FeedEntryType>> {
         let e = match entry {
             Ok(entry) => entry,
             Err(_) => {
-                println!("Error converting AtomEntry result to vector");
+                warn!("Error converting AtomEntry result to vector");
                 continue;
             }
         };
@@ -622,7 +623,7 @@ fn get_rss_entry_db() -> Result<Vec<FeedEntryType>> {
         let hash: i64 = match row.get(9) {
             Ok(hash) => hash,
             Err(e) => {
-                eprintln!("Error Loading Hash: {e}");
+                error!("Error Loading Hash: {e}");
                 0
             }
         };
@@ -647,7 +648,7 @@ fn get_rss_entry_db() -> Result<Vec<FeedEntryType>> {
         let e = match entry {
             Ok(entry) => entry,
             Err(_) => {
-                println!("Error converting RssEntry result to vector");
+                warn!("Error converting RssEntry result to vector");
                 continue;
             }
         };
@@ -667,7 +668,7 @@ pub fn get_feed_items_db() -> Vec<FeedEntryType> {
     full_feeds.append(&mut atom_feed);
     full_feeds.append(&mut rss_feed);
 
-    println!("Number of rows loaded from DB: {:?}", full_feeds.len());
+    debug!("Number of rows loaded from DB: {:?}", full_feeds.len());
 
     return full_feeds;
 }

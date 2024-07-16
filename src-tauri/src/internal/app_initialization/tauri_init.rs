@@ -1,3 +1,4 @@
+use log::info;
 use tauri::Manager;
 use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
 
@@ -14,7 +15,7 @@ pub fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>>
     // TODO tauri::async_runtime::spawn(initialize_db()); // insize intialize DB will be while look that looks for new items every 5 min, etc. // THis spawns thread
 
     let app_handle = app.handle();
-    println!("Setting up the app...");
+    info!("Setting up the app...");
 
     let feeds = internal::sqlite_db::get_feeds_db().expect("Error grabbing Feeds for BE");
     crate::internal::dbo::feed::start_feed_fetcher(app_handle, feeds);
@@ -23,9 +24,9 @@ pub fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>>
 }
 
 async fn initialize_app(splashscreen_window: tauri::Window, main_window: tauri::Window) {
-    println!("Initializing...");
+    info!("Initializing...");
     std::thread::sleep(std::time::Duration::from_secs(5)); // FIXME: This is arbitrary time to wait for now but we can do any heavy lifting for DB stuff here
-    println!("Done initializing.");
+    info!("Done initializing.");
 
     // After it's done, close the splashscreen and display the main window
     splashscreen_window.close().unwrap();

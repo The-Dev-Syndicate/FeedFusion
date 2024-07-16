@@ -1,3 +1,4 @@
+use log::error;
 use reqwest::blocking::get;
 use serde::Serialize;
 use std::thread;
@@ -55,7 +56,7 @@ fn fetch_feed(
 
 fn fetch_rss(url: &str) -> Result<Vec<FeedEntryType>, Box<dyn std::error::Error>> {
     let response = get(url)?.text()?;
-    // println!("{:?}", response);
+    // info!("{:?}", response);
 
     let channel = rss::Channel::read_from(response.as_bytes())?;
 
@@ -137,7 +138,7 @@ pub fn start_feed_fetcher<R: Runtime>(app: AppHandle<R>, feeds: Vec<Feed>) {
 
         // Fetch feed immediately upon initialization
         if let Err(e) = fetch_and_emit_feed(&app_handle, &feed_clone) {
-            eprintln!("Error fetching feed immediately: {}", e);
+            error!("Error fetching feed immediately: {}", e);
         }
 
         thread::spawn(move || loop {
@@ -148,7 +149,7 @@ pub fn start_feed_fetcher<R: Runtime>(app: AppHandle<R>, feeds: Vec<Feed>) {
                         &format!("Error fetching feed {}: {}", feed_clone.url, e),
                     )
                     .unwrap();
-                eprintln!("Error fetching feed {}: {}", feed_clone.url, e);
+                error!("Error fetching feed {}: {}", feed_clone.url, e);
             }
             thread::sleep(Duration::from_secs(feed_clone.poll_interval as u64));
         });
