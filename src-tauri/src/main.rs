@@ -9,6 +9,7 @@ use env_logger::Env;
 use internal::app_initialization::tauri_init::{generate_menu, handle_menu_event, setup_app};
 
 fn main() {
+    // Run at a different level with RUST_LOG=debug cargo tauri dev  for debug level. See: https://crates.io/crates/env_logger
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
     let menu = generate_menu();
 
