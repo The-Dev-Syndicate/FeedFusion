@@ -72,6 +72,7 @@ pub fn create_rss_entry_table() -> Result<Connection> {
             title       TEXT NOT NULL,
             link        TEXT NOT NULL,    
             description TEXT NOT NULL,
+            feed_id     INTEGER NOT NULL,
             pub_date    TEXT,
             author      TEXT,
             category    TEXT,
@@ -96,19 +97,20 @@ pub fn create_atom_entry_table() -> Result<Connection> {
     // TODO: Only create DB & tables the first time its opened
     conn.execute(
         "CREATE TABLE  IF NOT EXISTS AtomEntry (
-            item_id  INTEGER PRIMARY KEY AUTOINCREMENT,
-            title   TEXT NOT NULL,
-            link    TEXT NOT NULL,    
-            summary TEXT NOT NULL,
-            id TEXT,
-            updated TEXT,
-            author TEXT,
-            category TEXT,
-            content TEXT,
+            item_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+            title       TEXT NOT NULL,
+            link        TEXT NOT NULL,    
+            summary     TEXT NOT NULL,
+            feed_id     INTEGER NOT NULL,
+            id          TEXT,
+            updated     TEXT,
+            author      TEXT,
+            category    TEXT,
+            content     TEXT,
             contributor TEXT,
-            pub_date TEXT,
-            rights TEXT,
-            hash   INTEGER NOT NULL
+            pub_date    TEXT,
+            rights      TEXT,
+            hash        INTEGER NOT NULL
         )",
         [], // list of parameters
     )?;
@@ -142,6 +144,7 @@ pub fn create_fake_feeds() -> Result<()> {
         "Lunar Vagabound".to_string(),
         10,
         FeedType::RSS,
+        1
     );
 
     let atom_feed = Feed::new(
@@ -149,12 +152,14 @@ pub fn create_fake_feeds() -> Result<()> {
         "DCrops".to_string(),
         30,
         FeedType::ATOM,
+        1
     );
 
     let rss_feed_vec = vec![rss_feed];
 
     // TODO, add ToSql trait to interpret feed fields as what sql expects, hard coding for now
-    for (idx, f) in rss_feed_vec.iter().enumerate() {
+    //for (idx, f) in rss_feed_vec.iter().enumerate() {
+    for f in rss_feed_vec.iter() {
         // PK auto incremented in SQLite/rusqulite
         conn.execute(
             "INSERT OR IGNORE INTO RSSFeeds
@@ -162,23 +167,22 @@ pub fn create_fake_feeds() -> Result<()> {
             VALUES
                 (?1, ?2, ?3, ?4)
                 ",
-            params![idx, f.url, f.poll_interval, f.alias],
+            params![f.feed_id, f.url, f.poll_interval, f.alias],
         )?;
     }
-
-    // // TODO: Add atom Feed
 
     let atom_feed_vec = vec![atom_feed]; // not necesary, but my brain wanted to do it
 
     // TODO add ToSql trait to interpret feed fields as what sql expects, hard coding for now
-    for (_, f) in atom_feed_vec.iter().enumerate() {
+    // for (idx, f) in atom_feed_vec.iter().enumerate() {
+    for f in atom_feed_vec.iter() {
         conn.execute(
             "INSERT OR IGNORE INTO AtomFeeds
                  (feed_id, url, poll_interval, alias)
              VALUES
                  (?1, ?2, ?3, ?4)
                  ",
-            params![1, f.url, f.poll_interval, f.alias],
+            params![f.feed_id, f.url, f.poll_interval, f.alias],
         )?;
     }
 
@@ -355,11 +359,11 @@ pub fn put_atom_entry_db(e: AtomEntry) -> Result<()> {
             // Insert a new entry if no match is found
             conn.execute(
                 "INSERT OR IGNORE INTO AtomEntry
-                    (title, link, summary, id, updated, author, category, content, contributor, pub_date, rights, hash)
+                    (title, link, summary, feed_id, id, updated, author, category, content, contributor, pub_date, rights, hash)
                 VALUES
-                    (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+                    (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
                     ",
-                    params![e.title, e.link, e.summary, e.id, e.updated, e.author,
+                    params![e.title, e.link, e.summary, e.feed_id, e.id, e.updated, e.author,
                             e.category, e.content, e.contributor, e.pub_date, e.rights, e.hash]
             )?;
         }
@@ -424,13 +428,14 @@ pub fn put_rss_entry_db(e: RssEntry) -> Result<()> {
             // Insert a new entry if no match is found
             conn.execute(
                 "INSERT INTO RSSEntry
-                    (title, link, description, pub_date, author, category, comments, enclosure, guid, hash)
+                    (title, link, description, feed_id, pub_date, author, category, comments, enclosure, guid, hash)
                 VALUES
-                    (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                    (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
                 params![
                     e.title,
                     e.link,
                     e.description,
+                    e.feed_id,
                     e.pub_date,
                     e.author,
                     e.category,
@@ -449,8 +454,7 @@ pub fn put_rss_entry_db(e: RssEntry) -> Result<()> {
 
 pub fn get_feeds_db() -> Result<Vec<Feed>> {
     let mut rss_feeds: Vec<Feed> = get_rss_feeds_db().expect("Error getting FE RSS feeds from DB");
-    let mut atom_feeds: Vec<Feed> =
-        get_atom_feeds_db().expect("Error getting FE Atom feeds from DB");
+    let mut atom_feeds: Vec<Feed> = get_atom_feeds_db().expect("Error getting FE Atom feeds from DB");
 
     let mut full_feeds: Vec<Feed> = Vec::new();
     full_feeds.append(&mut rss_feeds); // put em together
@@ -469,7 +473,7 @@ pub fn get_rss_feeds_db() -> Result<Vec<Feed>> {
     // TODO: read in select statement, hard code for now
     let mut stmt = conn.prepare(
         "
-        SELECT url, alias, poll_interval
+        SELECT url, alias, poll_interval, feed_id
         FROM RSSFeeds
         ",
     )?;
@@ -481,6 +485,7 @@ pub fn get_rss_feeds_db() -> Result<Vec<Feed>> {
             row.get(1)?,
             row.get(2)?,
             FeedType::RSS,
+            row.get(3)?,
         ))
     })?;
 
@@ -512,7 +517,7 @@ pub fn get_atom_feeds_db() -> Result<Vec<Feed>> {
     // TODO: read in select statement, hard code for now
     let mut stmt = conn.prepare(
         "
-        SELECT url, alias, poll_interval
+        SELECT url, alias, poll_interval, feed_id
         FROM AtomFeeds
         ",
     )?;
@@ -524,6 +529,7 @@ pub fn get_atom_feeds_db() -> Result<Vec<Feed>> {
             row.get(1)?,
             row.get(2)?,
             FeedType::ATOM,
+            row.get(3)?,
         ))
     })?;
 
@@ -555,14 +561,14 @@ fn get_atom_entry_db() -> Result<Vec<FeedEntryType>> {
     // TODO: read in select statement, hard code for now
     let mut stmt = conn.prepare(
         "
-        SELECT title, link, summary, id, updated, author, category, content, contributor, pub_date, rights, hash
+        SELECT title, link, summary, feed_id, id, updated, author, category, content, contributor, pub_date, rights, hash
         FROM AtomEntry
         "
     )?;
 
     // TODO: Control logic that this is a valid SELECT statement
     let atom_iter = stmt.query_map([], |row| {
-        let hash: i64 = match row.get(11) {
+        let hash: i64 = match row.get(12) {
             Ok(hash) => hash,
             Err(e) => {
                 eprintln!("Error loading atom hash: {e}");
@@ -573,14 +579,15 @@ fn get_atom_entry_db() -> Result<Vec<FeedEntryType>> {
             title: row.get(0)?,
             link: row.get(1)?,
             summary: row.get(2)?,
-            id: row.get(3)?,
-            updated: row.get(4)?,
-            author: row.get(5)?,
-            category: row.get(6)?,
-            content: row.get(7)?,
-            contributor: row.get(8)?,
-            pub_date: row.get(9)?,
-            rights: row.get(10)?,
+            feed_id: row.get(3)?,
+            id: row.get(4)?,
+            updated: row.get(5)?,
+            author: row.get(6)?,
+            category: row.get(7)?,
+            content: row.get(8)?,
+            contributor: row.get(9)?,
+            pub_date: row.get(10)?,
+            rights: row.get(11)?,
             hash,
         })
     })?;
@@ -612,14 +619,14 @@ fn get_rss_entry_db() -> Result<Vec<FeedEntryType>> {
     // TODO: read in select statement, hard code for now
     let mut stmt = conn.prepare(
         "
-        SELECT title, link, description, pub_date, author, category, comments, enclosure, guid, hash
+        SELECT title, link, description, feed_id, pub_date, author, category, comments, enclosure, guid, hash
         FROM RSSEntry
         ",
     )?;
 
     // TODO: Control logic that this is a valid SELECT statement
     let rss_iter = stmt.query_map([], |row| {
-        let hash: i64 = match row.get(9) {
+        let hash: i64 = match row.get(10) {
             Ok(hash) => hash,
             Err(e) => {
                 eprintln!("Error Loading Hash: {e}");
@@ -630,12 +637,13 @@ fn get_rss_entry_db() -> Result<Vec<FeedEntryType>> {
             title: row.get(0)?,
             link: row.get(1)?,
             description: row.get(2)?,
-            pub_date: row.get(3)?,
-            author: row.get(4)?,
-            category: row.get(5)?,
-            comments: row.get(6)?,
-            enclosure: row.get(7)?,
-            guid: row.get(8)?,
+            feed_id: row.get(3)?,
+            pub_date: row.get(4)?,
+            author: row.get(5)?,
+            category: row.get(6)?,
+            comments: row.get(7)?,
+            enclosure: row.get(8)?,
+            guid: row.get(9)?,
             hash: hash,
         })
     })?;
@@ -660,8 +668,7 @@ fn get_rss_entry_db() -> Result<Vec<FeedEntryType>> {
 //------------------------------------------------------------------------------------------
 
 pub fn get_feed_items_db() -> Vec<FeedEntryType> {
-    let mut atom_feed: Vec<FeedEntryType> =
-        get_atom_entry_db().expect("Panic query fake AtomEntry");
+    let mut atom_feed: Vec<FeedEntryType> = get_atom_entry_db().expect("Panic query fake AtomEntry");
     let mut rss_feed: Vec<FeedEntryType> = get_rss_entry_db().expect("Panic query fake RSSEntry");
     let mut full_feeds: Vec<FeedEntryType> = Vec::new();
     full_feeds.append(&mut atom_feed);

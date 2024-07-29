@@ -6,7 +6,7 @@ use tauri::Manager;
 use tauri::{AppHandle, Runtime};
 
 use crate::internal::dbo::entry::{AtomEntry, FeedEntryType, RssEntry};
-use crate::internal::sqlite_db::{get_feed_items_db, put_feed_items_db};
+use crate::internal::sqlite_db::{get_feed_items_db, put_feed_items_db, get_atom_feeds_db, get_rss_feeds_db};
 
 #[derive(Clone, Debug, Serialize)] // Debug for printing to console
 pub enum FeedType {
@@ -20,6 +20,7 @@ pub struct Feed {
     pub feed_type: FeedType,
     pub poll_interval: i32,
     pub alias: Option<String>,
+    pub feed_id: Option<usize>,
 }
 
 impl Feed {
@@ -28,6 +29,7 @@ impl Feed {
         feed_alias: String,
         poll_interval: i32,
         feed_type: FeedType,
+        feed_id: usize,
     ) -> Self {
         // changed to handle values in seconds
         Self {
@@ -35,6 +37,7 @@ impl Feed {
             alias: Some(feed_alias),
             poll_interval,
             feed_type,
+            feed_id: Some(feed_id),
         }
     }
 }
@@ -43,17 +46,47 @@ fn fetch_feed(
     url: &str,
     feed_type: &FeedType,
 ) -> Result<Vec<FeedEntryType>, Box<dyn std::error::Error>> {
-    let new_feed_item = match feed_type {
-        FeedType::RSS => fetch_rss(url).expect("Error fetching RSS feed item"),
-        FeedType::ATOM => fetch_atom(url).expect("Error fetching Atom feed item"),
+    // Get feed_id of parent feed for pk/fk matching
+    match feed_type {
+        FeedType::RSS => {
+            let feed_vec = get_rss_feeds_db();
+            match feed_vec {
+                Ok(feed_vec) => {
+                    // println!("Yea");
+                    // let feed = feed_vec.into_iter().nth(0).unwrap(); //feed_vec.first();
+                    let feed = feed_vec.first().unwrap();
+                    // println!("{:?}", feed.feed_id);
+                    let new_feed_item = fetch_rss(url, feed.feed_id).expect("Error fetching RSS feed item");
+                    put_feed_items_db(new_feed_item).expect("Error sending fetched feed to DB");
+                }
+                Err(_) => println!("Shit")
+            } 
+        }
+        FeedType::ATOM => {
+            let feed_vec = get_atom_feeds_db();
+            match feed_vec {
+                Ok(feed_vec) => {
+                    let feed = feed_vec.first().unwrap();
+                    let new_feed_item = fetch_atom(url, feed.feed_id).expect("Error fetching Atom feed item");
+                    put_feed_items_db(new_feed_item).expect("Error sending fetched feed to DB");
+                }
+                Err(_) => println!("Shit")
+            }
+        }
     };
+
+    // let new_feed_item = match feed_type {
+    //     FeedType::RSS => fetch_rss(url).expect("Error fetching RSS feed item"),
+    //     FeedType::ATOM => fetch_atom(url).expect("Error fetching Atom feed item"),
+    // };
+    
     // insert newly fetched item into DB
-    put_feed_items_db(new_feed_item).expect("Error sending fetched feed to DB");
+    // put_feed_items_db(new_feed_item).expect("Error sending fetched feed to DB");
 
     Ok(vec![])
 }
 
-fn fetch_rss(url: &str) -> Result<Vec<FeedEntryType>, Box<dyn std::error::Error>> {
+fn fetch_rss(url: &str, feed_id: Option<usize>) -> Result<Vec<FeedEntryType>, Box<dyn std::error::Error>> {
     let response = get(url)?.text()?;
     // println!("{:?}", response);
 
@@ -71,6 +104,7 @@ fn fetch_rss(url: &str) -> Result<Vec<FeedEntryType>, Box<dyn std::error::Error>
                 title.unwrap(),
                 item.link().map(|s| s.to_string()),
                 item.description().map(|s| s.to_string()),
+                feed_id,
                 item.pub_date().map(|s| s.to_string()),
                 item.author().map(|s| s.to_string()),
                 item.categories().first().map(|c| c.name().to_string()),
@@ -84,7 +118,7 @@ fn fetch_rss(url: &str) -> Result<Vec<FeedEntryType>, Box<dyn std::error::Error>
     Ok(items)
 }
 
-fn fetch_atom(url: &str) -> Result<Vec<FeedEntryType>, Box<dyn std::error::Error>> {
+fn fetch_atom(url: &str, feed_id: Option<usize>) -> Result<Vec<FeedEntryType>, Box<dyn std::error::Error>> {
     let response = get(url)?.text()?;
     let feed = atom_syndication::Feed::read_from(response.as_bytes())?;
 
@@ -102,6 +136,7 @@ fn fetch_atom(url: &str) -> Result<Vec<FeedEntryType>, Box<dyn std::error::Error
                 title.clone(),
                 entry.links().first().map(|link| link.href().to_string()),
                 entry.summary().map(|summary| summary.to_string()),
+                feed_id,
                 Some(entry.id().to_string()),
                 Some(entry.updated().to_string()),
                 entry
