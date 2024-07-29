@@ -66,6 +66,7 @@ pub fn create_rss_entry_table() -> Result<Connection> {
     //print!("{:?}\n", conn.is_autocommit());
 
     // TODO: Only create DB & tables the first time its opened
+    // TODO: Make feed_id forieng key
     conn.execute(
         "CREATE TABLE  IF NOT EXISTS RSSEntry (
             item_id     INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,6 +96,7 @@ pub fn create_atom_entry_table() -> Result<Connection> {
     //print!("{:?}\n", conn.is_autocommit());
 
     // TODO: Only create DB & tables the first time its opened
+    // TODO: Make feed_id forieng key
     conn.execute(
         "CREATE TABLE  IF NOT EXISTS AtomEntry (
             item_id     INTEGER PRIMARY KEY AUTOINCREMENT,
