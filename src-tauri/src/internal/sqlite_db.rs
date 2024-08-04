@@ -1,6 +1,7 @@
 use crate::internal::dbo::entry::{AtomEntry, FeedEntryType, RssEntry};
 use crate::internal::dbo::feed::{Feed, FeedType};
 use rusqlite::{params, Connection, OptionalExtension, Result};
+// use url::PathSegmentsMut;
 
 //-----------//
 // Functions //
@@ -245,16 +246,49 @@ pub fn put_rss_feed_db(feed_url: String, poll_timer: i32, feed_alias: String) ->
     let conn = Connection::open(path)?;
     //print!("{:?}\n", conn.is_autocommit());
 
-    conn.execute(
-        "INSERT OR IGNORE INTO RSSFeeds
-            (url, poll_interval, alias)
-        VALUES
-            (?1, ?2, ?3)
-        ",
-        params![feed_url, poll_timer, feed_alias], // send "test_category" for feed_category
+    // TODO must add a check for the url, INSERT/IGNORE won't catch duplicates, esp with autoincrement of PK
+
+    let mut stmt = conn.prepare(
+        "
+        SELECT url
+        FROM RSSFeeds
+        WHERE url = ?1 
+    ",
     )?;
 
-    println!("RSS Feed uploaded, but not the correct way to test this, use match, or something");
+    let existing_url: Option<String> = stmt
+        .query_row(params![feed_url], |row| row.get(0))
+        .optional()?;
+
+    //////////
+    match existing_url {
+        Some(_) => {
+            // If there is a match, it must match on url, so no need to do further checking
+            println!("A feed was found for url: {:?}", feed_url)
+        }
+        None => {
+            conn.execute(
+                "INSERT OR IGNORE INTO RSSFeeds
+                    (url, poll_interval, alias)
+                VALUES
+                    (?1, ?2, ?3)
+                ",
+                params![feed_url, poll_timer, feed_alias], // send "test_category" for feed_category
+            )?;
+        
+            println!("RSS Feed uploaded, but not the correct way to test this, use match, or something");
+        }
+    }
+    // conn.execute(
+    //     "INSERT OR IGNORE INTO RSSFeeds
+    //         (url, poll_interval, alias)
+    //     VALUES
+    //         (?1, ?2, ?3)
+    //     ",
+    //     params![feed_url, poll_timer, feed_alias], // send "test_category" for feed_category
+    // )?;
+
+    // println!("RSS Feed uploaded, but not the correct way to test this, use match, or something");
 
     Ok(())
 }
