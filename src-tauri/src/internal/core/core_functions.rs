@@ -1,3 +1,4 @@
+use log::debug;
 use url::Url;
 
 use crate::internal;
@@ -21,7 +22,7 @@ pub fn load_feeds() -> Vec<Feed> {
 pub fn add_feed(feed_url: String, feed_alias: String, poll_timer: i32) -> Result<(), String> {
     match validate_and_correct_url(&feed_url) {
         Ok(_) => {
-            println!(
+            debug!(
                 "Eventually we will build with {} - {}",
                 feed_alias, poll_timer
             );

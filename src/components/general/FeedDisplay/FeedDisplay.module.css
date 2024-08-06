@@ -1,0 +1,64 @@
+.listItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 10px;
+  border: 1px solid black;
+}
+
+.cogIcon {
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(144, 238, 144, 0.9); /* Light green with opacity */
+  backdrop-filter: blur(600px); /* Apply blur effect */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure the modal is on top */
+}
+
+.modalContent {
+  background: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  position: relative;
+  width: 400px;
+  max-width: 80%;
+  z-index: 1001; /* Ensure the content is on top of the modal backdrop */
+}
+
+.close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 1002; /* Ensure the close button is on top of the content */
+}
+
+.modalActions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+form label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+form input {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+}

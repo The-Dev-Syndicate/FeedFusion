@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import '../../App.css';
-import FeedList from './FeedList';
+import FeedList from './FeedDisplay/FeedList';
 import AddFeedModal from './AddFeedModal';
 
 
