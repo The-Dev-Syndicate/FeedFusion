@@ -2,6 +2,8 @@ use serde::Serialize;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
+// use super::feed;
+
 #[derive(Serialize, Debug)] // Debug for printing to console
 pub enum FeedEntryType {
     RSS(RssEntry),
@@ -15,6 +17,7 @@ pub struct RssEntry {
     pub hash: i64,
     pub link: Option<String>,
     pub description: Option<String>,
+    pub feed_id: Option<usize>,
     // Optional fields
     pub pub_date: Option<String>,
     pub author: Option<String>,
@@ -29,6 +32,7 @@ impl RssEntry {
         title: String,
         link: Option<String>,
         description: Option<String>,
+        feed_id: Option<usize>,
         pub_date: Option<String>,
         author: Option<String>,
         category: Option<String>,
@@ -40,6 +44,7 @@ impl RssEntry {
         title.hash(&mut hasher);
         link.hash(&mut hasher);
         description.hash(&mut hasher);
+        // feed_id.hash(&mut hasher);
         pub_date.hash(&mut hasher);
         author.hash(&mut hasher);
         category.hash(&mut hasher);
@@ -52,6 +57,7 @@ impl RssEntry {
             title,
             link,
             description,
+            feed_id,
             pub_date,
             author,
             category,
@@ -70,6 +76,7 @@ pub struct AtomEntry {
     pub title: String,
     pub link: Option<String>,
     pub summary: Option<String>,
+    pub feed_id: Option<usize>,
     // Optional fields
     pub id: Option<String>,
     pub updated: Option<String>,
@@ -87,6 +94,7 @@ impl AtomEntry {
         title: String,
         link: Option<String>,
         summary: Option<String>,
+        feed_id: Option<usize>,
         id: Option<String>,
         updated: Option<String>,
         author: Option<String>,
@@ -105,6 +113,7 @@ impl AtomEntry {
         let fields_to_hash = [
             &link,
             &summary,
+            // &feed_id, // Error due to being dtype usize, when String expected in this hasher
             &id,
             &updated,
             &author,
@@ -127,6 +136,7 @@ impl AtomEntry {
             title,
             link,
             summary,
+            feed_id,
             id,
             updated,
             author,
