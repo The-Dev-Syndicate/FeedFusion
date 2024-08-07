@@ -56,9 +56,16 @@ fn fetch_feed(
                     // println!("Yea");
                     // let feed = feed_vec.into_iter().nth(0).unwrap(); //feed_vec.first();
                     let feed = feed_vec.first().unwrap();
-                    // println!("{:?}", feed.feed_id);
-                    let new_feed_item = fetch_rss(url, feed.feed_id).expect("Error fetching RSS feed item");
-                    put_feed_items_db(new_feed_item).expect("Error sending fetched feed to DB");
+                    for f in feed_vec.iter() {
+                        if f.url == url {
+                            let new_feed_item = fetch_rss(url, feed.feed_id).expect("Error fetching RSS feed item");
+                            put_feed_items_db(new_feed_item).expect("Error sending fetched feed to DB");
+                            break;
+                        }
+                        else {
+                            println!("No matching feed for {:?} was found when attempting to fetch feed items.", url);
+                        }
+                    }   
                 }
                 Err(_) => println!("Shit")
             } 
